@@ -22,5 +22,8 @@
     "jslint": "^0.9.6",
     "mocha": "^2.4.5",
     "webpack": "^1.12.14"
+  },
+  "dependencies": {
+    "lodash": "^4.6.1"
   }
 }
