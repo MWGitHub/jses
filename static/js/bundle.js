@@ -1,3 +1,4 @@
+var Game =
 /******/ (function(modules) { // webpackBootstrap
 /******/ 	// The module cache
 /******/ 	var installedModules = {};
@@ -54,15 +55,43 @@
 	
 	var _pixiLayer2 = _interopRequireDefault(_pixiLayer);
 	
+	var _viewport = __webpack_require__(7);
+	
+	var _camera = __webpack_require__(8);
+	
+	var _camera2 = _interopRequireDefault(_camera);
+	
+	var _stateSwitcher = __webpack_require__(9);
+	
+	var _stateSwitcher2 = _interopRequireDefault(_stateSwitcher);
+	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
 	var Game = function Game() {
+	  var width = 683,
+	      height = 384;
+	
 	  var core = new _core2.default(window);
+	
+	  // Create the renderer.
 	  var pixiLayer = new _pixiLayer2.default(window.document.getElementById('content'));
 	  core.addRenderLayer(pixiLayer);
 	
-	  core.addUpdateCallback(function (dt) {
-	    console.log(dt);
+	  // Create the main viewport and camera.
+	  var camera = new _camera2.default();
+	  var viewport = new _viewport.Viewport(camera, width, height);
+	  viewport.addTo(pixiLayer.stage);
+	  viewport.isFloored = false;
+	  core.resize(width, height);
+	
+	  // Create the states
+	  var switcher = new _stateSwitcher2.default();
+	  core.addUpdateCallback(switcher.update.bind(switcher));
+	  core.addPreRenderCallback(switcher.preRender.bind(switcher));
+	  core.addPostRenderCallback(switcher.postRender.bind(switcher));
+	
+	  core.addPreRenderCallback(function (dt) {
+	    viewport.update();
 	  });
 	
 	  this.start = function () {
@@ -74,8 +103,7 @@
 	  };
 	};
 	
-	var game = new Game();
-	game.start();
+	module.exports = Game;
 
 /***/ },
 /* 1 */
@@ -647,6 +675,379 @@
 	RenderLayer.prototype.resize = function (width, height) {};
 	
 	exports.default = RenderLayer;
+
+/***/ },
+/* 7 */
+/***/ function(module, exports) {
+
+	"use strict";
+	
+	/**
+	 * Represents a viewport for pixi.
+	 * A viewport is not shown until added to a displayable object such as stage.
+	 * If a width and height is provided the viewport will center at the halves.
+	 */
+	
+	/**
+	 * Represents a scene for the viewport.
+	 * @constructor
+	 */
+	
+	function Scene() {
+	  /**
+	   * Display used for updating with the camera.
+	   * @type {PIXI.Container}
+	   */
+	  this.display = new PIXI.Container();
+	
+	  /**
+	   * True to lock the scene to no longer be scrollable.
+	   * @type {boolean}
+	   */
+	  this.isLocked = false;
+	}
+	
+	/**
+	 * Creates a viewport.
+	 * @param {Camera} camera the camera to use.
+	 * @param {Number} width the width of the viewport.
+	 * @param {Number} height the height of the viewport.
+	 * @constructor
+	 */
+	function Viewport(camera, width, height) {
+	  /**
+	   * Main display of the viewport.
+	   * @type {PIXI.Container}
+	   */
+	  this.display = new PIXI.Container();
+	
+	  /**
+	   * Scenes for the viewport.
+	   * @type {Array.<Scene>}
+	   */
+	  this.scenes = [];
+	
+	  /**
+	   * Camera to use for offsetting the scenes.
+	   * @type {Camera}
+	   */
+	  this.camera = camera;
+	
+	  /**
+	   * Width of the viewport.
+	   * @type {number}
+	   */
+	  this.width = width;
+	
+	  /**
+	   * Height of the viewport.
+	   * @type {number}
+	   */
+	  this.height = height;
+	
+	  /**
+	   * True to floor the camera.
+	   * @type {boolean}
+	   */
+	  this.isFloored = true;
+	}
+	
+	/**
+	 * Retrieves the calculated camera X position.
+	 * @returns {number}
+	 */
+	Viewport.prototype.getCalculatedCameraX = function () {
+	  var x = -this.camera.position.x * this.camera.scale.x + this.width / 2;
+	  if (this.isFloored) {
+	    return Math.floor(x);
+	  } else {
+	    return x;
+	  }
+	};
+	
+	/**
+	 * Retrieves the calculated camera Y position.
+	 * @returns {number}
+	 */
+	Viewport.prototype.getCalculatedCameraY = function () {
+	  var y = -this.camera.position.y * this.camera.scale.y + this.height / 2;
+	  if (this.isFloored) {
+	    return Math.floor(y);
+	  } else {
+	    return y;
+	  }
+	};
+	
+	/**
+	 * Floors all displays and children positions.
+	 * @param {PIXI.Container|PIXI.DisplayObject} display the display to floor.
+	 */
+	function floorDisplays(display) {
+	  display.position.x = Math.floor(display.position.x);
+	  display.position.y = Math.floor(display.position.y);
+	
+	  if (display instanceof PIXI.Container) {
+	    for (var i = 0; i < display.children.length; i++) {
+	      floorDisplays(display.children[i]);
+	    }
+	  }
+	}
+	
+	/**
+	 * Updates the viewport.
+	 */
+	Viewport.prototype.update = function () {
+	  if (!this.camera) return;
+	
+	  // Update the view properties.
+	  for (var i = 0; i < this.scenes.length; i++) {
+	    var scene = this.scenes[i];
+	    var display = scene.display;
+	    display.position.x = this.getCalculatedCameraX();
+	    display.position.y = this.getCalculatedCameraY();
+	    display.scale.x = this.camera.scale.x;
+	    display.scale.y = this.camera.scale.y;
+	    display.rotation = this.camera.rotation;
+	
+	    if (scene.isLocked) {
+	      display.position.x = this.width / 2;
+	      display.position.y = this.height / 2;
+	    }
+	  }
+	};
+	
+	/**
+	 * Add a scene to the viewport.
+	 * Scenes added will have their parent changed to the viewport display.
+	 * @param {Scene} scene the scene to add.
+	 */
+	Viewport.prototype.addScene = function (scene) {
+	  this.display.addChild(scene.display);
+	  this.scenes.push(scene);
+	};
+	
+	/**
+	 * Remove a scene from the viewport.
+	 * Scenes removed will no longer have a parent.
+	 * @param {ViewportScene} scene the scene to remove.
+	 */
+	Viewport.prototype.removeScene = function (scene) {
+	  this.display.removeChild(scene.display);
+	  var index = this.scenes.indexOf(scene);
+	  if (index !== -1) {
+	    this.scenes.splice(index, 1);
+	  }
+	};
+	
+	/**
+	 * Add the viewport to an object.
+	 * @param {PIXI.Container}
+	 */
+	Viewport.prototype.addTo = function (object) {
+	  object.addChild(this.display);
+	};
+	
+	/**
+	 * Removes the viewport from the parent.
+	 */
+	Viewport.prototype.removeFromParent = function () {
+	  if (this.display.parent) this.display.parent.removeChild(this.display);
+	};
+	
+	module.exports.Viewport = Viewport;
+	module.exports.Scene = Scene;
+
+/***/ },
+/* 8 */
+/***/ function(module, exports) {
+
+	"use strict";
+	
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	function Camera() {
+	  this.position = {
+	    x: 0,
+	    y: 0
+	  };
+	
+	  this.rotation = 0;
+	
+	  this.scale = {
+	    x: 1.0,
+	    y: 1.0
+	  };
+	}
+	
+	exports.default = Camera;
+
+/***/ },
+/* 9 */
+/***/ function(module, exports) {
+
+	"use strict";
+	
+	/**
+	 * Updates and switches states.
+	 */
+	
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	function StateSwitcher() {
+	  /**
+	   * States that can be switched to.
+	   * @type {Array.<State>}
+	   * @private
+	   */
+	  this._states = [];
+	
+	  /**
+	   * Currently active states that update in add order.
+	   * @type {Array.<State>}
+	   * @private
+	   */
+	  this._activeStates = [];
+	}
+	
+	/**
+	 * Update all the active states.
+	 * @param {Number} dt the time between frames.
+	 */
+	StateSwitcher.prototype.update = function (dt) {
+	  for (var i = 0; i < this._activeStates.length; i++) {
+	    this._activeStates[i].update(dt);
+	  }
+	};
+	
+	/**
+	 * Calls pre-render on all states.
+	 * @param {Number} dt the time between frames.
+	 */
+	StateSwitcher.prototype.preRender = function (dt) {
+	  for (var i = 0; i < this._activeStates.length; i++) {
+	    this._activeStates[i].preRender(dt);
+	  }
+	};
+	
+	/**
+	 * Calls post-render on all states.
+	 * @param {Number} dt the time between frames.
+	 */
+	StateSwitcher.prototype.postRender = function (dt) {
+	  for (var i = 0; i < this._activeStates.length; i++) {
+	    this._activeStates[i].postRender(dt);
+	  }
+	};
+	
+	/**
+	 * Adds a state to the switcher.
+	 * @param {State} state the state to add.
+	 * @param {{}=} params optional parameters to pass to the state.
+	 */
+	StateSwitcher.prototype.addState = function (state, params) {
+	  if (this._states.indexOf(state) === -1) {
+	    this._states.push(state);
+	    if (!state.switcher) {
+	      state.switcher = this;
+	    }
+	    state.onAdd(params);
+	  }
+	};
+	
+	/**
+	 * Remove a state from the switcher.
+	 * A removed state must not be active.
+	 * @param {State} state the state to remove.
+	 * @param {{}=} params optional parameters to pass to the state.
+	 * @returns {Boolean} true if the state has been removed.
+	 */
+	StateSwitcher.prototype.removeState = function (state, params) {
+	  var index = this._activeStates.indexOf(state);
+	  if (index === -1) return false;
+	
+	  state.onRemove(params);
+	  this._states.splice(index, 1);
+	
+	  return true;
+	};
+	
+	/**
+	 * Retrieves the first state found by name or null if none found.
+	 * @param {String} name the name of the state to retrieve.
+	 * @returns {State} the state or null if none found.
+	 */
+	StateSwitcher.prototype.retrieveState = function (name) {
+	  for (var i = 0; i < this._states.length; i++) {
+	    var state = this._states[i];
+	    if (state.type === name) {
+	      return state;
+	    }
+	  }
+	
+	  return null;
+	};
+	
+	/**
+	 * Switches a state with another state.
+	 * Both states must already be valid states to switch to and the state to switch must be active.
+	 * @param {State} state the state to switch out.
+	 * @param {State} newState the state to switch in to replace in the array.
+	 * @param {{}=} leaveParams the parameters to input for the left state.
+	 * @param {{}=} enterParams the parameters to input for the entering state.
+	 * @returns {Boolean} true if the state has been switched to.
+	 */
+	StateSwitcher.prototype.switchState = function (state, newState, leaveParams, enterParams) {
+	  var index = this._activeStates.indexOf(state);
+	
+	  // Check if invalid state to switch to.
+	  if (index < 0) return false;
+	  if (this._states.indexOf(newState) < 0) return false;
+	
+	  // Switch the states (replaces the spot in the array to keep update order)
+	  state.onLeave(leaveParams);
+	  this._activeStates[index] = newState;
+	  newState.onEnter(enterParams);
+	
+	  return true;
+	};
+	
+	/**
+	 * Enter a state and adds it to the end of the active states.
+	 * @param {State} state the state to push in.
+	 * @param {{}=} enterParams optional parameters to pass to enter.
+	 * @returns {Boolean} true if the state has been entered.
+	 */
+	StateSwitcher.prototype.enterState = function (state, enterParams) {
+	  if (this._states.indexOf(state) === -1) return false;
+	  if (this._activeStates.indexOf(state) !== -1) return false;
+	
+	  this._activeStates.push(state);
+	  state.onEnter(enterParams);
+	
+	  return true;
+	};
+	
+	/**
+	 * Leaves a state and removes it from the active states.
+	 * @param {CoreState} state the state to leave.
+	 * @param {{}=} leaveParams optional parameters to pass to leave.
+	 * @returns {Boolean} true if the state has been left.
+	 */
+	StateSwitcher.prototype.leaveState = function (state, leaveParams) {
+	  if (this._states.indexOf(state) === -1) return false;
+	
+	  var index = this._activeStates.indexOf(state);
+	  if (index === -1) return false;
+	
+	  state.onLeave(leaveParams);
+	  this._activeStates.splice(index, 1);
+	
+	  return true;
+	};
+	
+	exports.default = StateSwitcher;
 
 /***/ }
 /******/ ]);

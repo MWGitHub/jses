@@ -5,7 +5,12 @@ var webpack = require('webpack');
 
 module.exports = {
   entry: './main.js',
-  output: { path: __dirname, filename: './static/js/bundle.js' },
+  output: {
+    path: __dirname,
+    filename: './static/js/bundle.js',
+    libraryTarget: 'var',
+    library: 'Game'
+  },
   module: {
     loaders: [
       {
