@@ -23,7 +23,7 @@ module.exports.LoopInterface = LoopInterface;
  * Naive loop implementation that only limits max updates.
  * Delta times will always be based on the max per seconds.
  * @param {Number} maxUpdatePerSecond the max the game will update per second.
- * @extends {LoopInterface}
+ * @extends LoopInterface
  */
 var Loop = function(maxUpdatesPerSecond) {
   LoopInterface.call(this);

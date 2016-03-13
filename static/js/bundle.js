@@ -50,18 +50,28 @@
 	
 	var _core2 = _interopRequireDefault(_core);
 	
+	var _pixiLayer = __webpack_require__(5);
+	
+	var _pixiLayer2 = _interopRequireDefault(_pixiLayer);
+	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
 	var Game = function Game() {
-	  this._core = new _core2.default(window);
+	  var core = new _core2.default(window);
+	  var pixiLayer = new _pixiLayer2.default(window.document.getElementById('content'));
+	  core.addRenderLayer(pixiLayer);
 	
-	  this._core.addUpdateCallback(function (dt) {
+	  core.addUpdateCallback(function (dt) {
 	    console.log(dt);
 	  });
-	};
 	
-	Game.prototype.start = function () {
-	  this._core.start();
+	  this.start = function () {
+	    core.start();
+	  };
+	
+	  this.stop = function () {
+	    core.stop();
+	  };
 	};
 	
 	var game = new Game();
@@ -528,7 +538,7 @@
 	 * Naive loop implementation that only limits max updates.
 	 * Delta times will always be based on the max per seconds.
 	 * @param {Number} maxUpdatePerSecond the max the game will update per second.
-	 * @extends {LoopInterface}
+	 * @extends LoopInterface
 	 */
 	var Loop = function Loop(maxUpdatesPerSecond) {
 	  LoopInterface.call(this);
@@ -556,6 +566,87 @@
 	};
 	
 	module.exports.Loop = Loop;
+
+/***/ },
+/* 5 */
+/***/ function(module, exports, __webpack_require__) {
+
+	"use strict";
+	
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	
+	var _renderLayer = __webpack_require__(6);
+	
+	var _renderLayer2 = _interopRequireDefault(_renderLayer);
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+	
+	/**
+	 * Pixi rendering layer which uses WebGL.
+	 * @param {HTMLElement} element to attach the layer to.
+	 * @constructor
+	 * @extends RenderLayer
+	 */
+	function PIXILayer(element) {
+	  _renderLayer2.default.call(this);
+	
+	  /**
+	   * Renderer for the layer.
+	   * @type {PIXI.WebGLRenderer}
+	   */
+	  this.renderer = new PIXI.WebGLRenderer(1366, 768);
+	
+	  /**
+	   * Stage to add objects to.
+	   * @type {PIXI.Stage}
+	   */
+	  this.stage = new PIXI.Container();
+	
+	  element.appendChild(this.renderer.view);
+	}
+	PIXILayer.prototype = Object.create(_renderLayer2.default.prototype);
+	
+	PIXILayer.prototype.render = function (dt) {
+	  this.renderer.render(this.stage);
+	};
+	
+	PIXILayer.prototype.resize = function (width, height) {
+	  this.renderer.resize(width, height);
+	};
+	
+	exports.default = PIXILayer;
+
+/***/ },
+/* 6 */
+/***/ function(module, exports) {
+
+	"use strict";
+	
+	/**
+	 * Base object for rendering layers.
+	 */
+	
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	function RenderLayer() {}
+	
+	/**
+	 * Renders the layer.
+	 * @param {Number} dt time between renders.
+	 */
+	RenderLayer.prototype.render = function (dt) {};
+	
+	/**
+	 * Resizes the rendering layer.
+	 * @params {Number} width the width of the layer.
+	 * @params {Number} height the height of the layer.
+	 */
+	RenderLayer.prototype.resize = function (width, height) {};
+	
+	exports.default = RenderLayer;
 
 /***/ }
 /******/ ]);
