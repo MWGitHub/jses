@@ -5,17 +5,22 @@ import PIXILayer from './src/pixi/pixi-layer';
 import { Viewport } from './src/pixi/viewport';
 import Camera from './src/pixi/camera';
 import StateSwitcher from './src/core/state-switcher';
+import { Input } from './src/core/input';
 
 var Game = function () {
   var width = 683, height = 384;
+  var gameElement = document.getElementById('content');
 
   var core = new Core(window);
 
-  // Create the renderer.
-  var pixiLayer = new PIXILayer(window.document.getElementById('content'));
+  // Create the renderer
+  var pixiLayer = new PIXILayer(gameElement);
   core.addRenderLayer(pixiLayer);
 
-  // Create the main viewport and camera.
+  // Create the input
+  var input = new Input(window, gameElement);
+
+  // Create the main viewport and camera
   var camera = new Camera();
   var viewport = new Viewport(camera, width, height);
   viewport.addTo(pixiLayer.stage);
@@ -30,6 +35,14 @@ var Game = function () {
 
   core.addPreRenderCallback((dt) => {
     viewport.update();
+  });
+
+  core.addUpdateCallback((dt) => {
+    console.log(input.keysDown[Input.charToKeyCode('W')]);
+  });
+
+  core.addEndCallback((dt) => {
+    input.flush();
   });
 
   this.start = function () {

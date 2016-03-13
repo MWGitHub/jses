@@ -103,13 +103,7 @@ Core.prototype._render = function (dt) {
  * @param {number} dt the time step of the update.
  */
 Core.prototype._update = function (dt) {
-  this._beginCallbacks.forEach(function (element) {
-    element(dt);
-  });
   this._onUpdate.forEach(function (element) {
-    element(dt);
-  });
-  this._endCallbacks.forEach(function (element) {
     element(dt);
   });
 };
@@ -119,11 +113,24 @@ Core.prototype._update = function (dt) {
  */
 Core.prototype._run = function () {
   var that = this;
+  var previous = Date.now();
   var runner = function () {
     if (!that._isRunning) return;
 
+    var now = Date.now();
+    var dt = now - previous;
+    previous = now;
+
+    that._beginCallbacks.forEach(function (element) {
+      element(dt);
+    });
+
     that.updateLoop.update(that._boundUpdate);
     that.renderLoop.update(that._boundRender);
+
+    that._endCallbacks.forEach(function (element) {
+      element(dt);
+    });
 
     if (isBrowser) {
       that._requestAnimFrame(runner);
