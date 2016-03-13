@@ -1,9 +1,10 @@
+"use strict";
 
 var path = require('path');
 var webpack = require('webpack');
 
 module.exports = {
-  entry: './src/main.js',
+  entry: './main.js',
   output: { path: __dirname, filename: './static/js/bundle.js' },
   module: {
     loaders: [
@@ -17,4 +18,5 @@ module.exports = {
       }
     ]
   },
+  devtool: '#source-map'
 };
