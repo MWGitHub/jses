@@ -67,6 +67,10 @@ var Game =
 	
 	var _input = __webpack_require__(10);
 	
+	var _gameState = __webpack_require__(11);
+	
+	var _gameState2 = _interopRequireDefault(_gameState);
+	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
 	var Game = function Game() {
@@ -96,12 +100,16 @@ var Game =
 	  core.addPreRenderCallback(switcher.preRender.bind(switcher));
 	  core.addPostRenderCallback(switcher.postRender.bind(switcher));
 	
+	  var initialState = new _gameState2.default(viewport, input);
+	  switcher.addState(initialState);
+	  switcher.enterState(initialState);
+	
 	  core.addPreRenderCallback(function (dt) {
 	    viewport.update();
 	  });
 	
-	  core.addUpdateCallback(function (dt) {
-	    console.log(input.keysDown[_input.Input.charToKeyCode('W')]);
+	  core.addBeginCallback(function (dt) {
+	    input.update(dt);
 	  });
 	
 	  core.addEndCallback(function (dt) {
@@ -1628,6 +1636,869 @@ var Game =
 	module.exports.CharCodes = Input.CharCodes;
 	module.exports.P1PadCodes = Input.P1PadCodes;
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(2)))
+
+/***/ },
+/* 11 */
+/***/ function(module, exports, __webpack_require__) {
+
+	"use strict";
+	
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	
+	var _state = __webpack_require__(12);
+	
+	var _state2 = _interopRequireDefault(_state);
+	
+	var _viewport = __webpack_require__(7);
+	
+	var _entitySystem = __webpack_require__(13);
+	
+	var _entitySystem2 = _interopRequireDefault(_entitySystem);
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+	
+	function GameState(viewport, input) {
+	  Object.call(_state2.default, this);
+	
+	  this._viewport = viewport;
+	  this._input = input;
+	
+	  this._scene = new _viewport.Scene();
+	  this._viewport.addScene(this._scene);
+	
+	  // Create and add the layers
+	  this._layers = {
+	    main: new PIXI.Container()
+	  };
+	  this._scene.display.addChild(this._layers.main);
+	
+	  // Create the entity system and systems
+	  this._entitySystem = new _entitySystem2.default();
+	  this.systems = [];
+	}
+	GameState.prototype = Object.create(_state2.default.prototype);
+	
+	GameState.prototype.onEnter = function (params) {};
+	
+	GameState.prototype.update = function (dt) {};
+	
+	GameState.prototype.onLeave = function (params) {};
+	
+	exports.default = GameState;
+
+/***/ },
+/* 12 */
+/***/ function(module, exports) {
+
+	"use strict";
+	
+	/**
+	 * Base state class.
+	 * @constructor
+	 */
+	
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	function CoreState() {
+	  /**
+	   * Name of the state used for switching to.
+	   * @type {string}
+	   */
+	  this.type = 'default';
+	
+	  /**
+	   * Switcher for switching states.
+	   * @type {StateSwitcher}
+	   */
+	  this.switcher = null;
+	}
+	
+	/**
+	 * Runs when the state is added to a switcher.
+	 * @param {{}=} params parameters to pass on the add.
+	 */
+	CoreState.prototype.onAdd = function (params) {};
+	
+	/**
+	 * Runs when the state is entered.
+	 * @param {{}=} params parameters to pass on entering.
+	 */
+	CoreState.prototype.onEnter = function (params) {};
+	
+	/**
+	 * Updates the state.
+	 * @param {Number} dt the time between updates in ms.
+	 */
+	CoreState.prototype.update = function (dt) {};
+	
+	/**
+	 * Updates before rendering.
+	 * @param {Number} dt the time between updates in ms.
+	 */
+	CoreState.prototype.preRender = function (dt) {};
+	
+	/**
+	 * Updates after rendering.
+	 * @param {Number} dt the time between updates in ms.
+	 */
+	CoreState.prototype.postRender = function (dt) {};
+	
+	/**
+	 * Runs when the state is left.
+	 * @param {{}=} params parameters to pass on leaving.
+	 */
+	CoreState.prototype.onLeave = function (params) {};
+	
+	/**
+	 * Runs when the state is removed from a switcher.
+	 * @param {{}=} params parameters to pass on leaving.
+	 */
+	CoreState.prototype.onRemove = function (params) {};
+	
+	/**
+	 * Runs on destruction.
+	 */
+	CoreState.prototype.destroy = function () {};
+	
+	exports.default = CoreState;
+
+/***/ },
+/* 13 */
+/***/ function(module, exports, __webpack_require__) {
+
+	"use strict";
+	
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	
+	var _entity = __webpack_require__(14);
+	
+	var _entity2 = _interopRequireDefault(_entity);
+	
+	var _entitySet = __webpack_require__(15);
+	
+	var _entitySet2 = _interopRequireDefault(_entitySet);
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+	
+	/**
+	 * Entity system to create entities and handle component setting and removing.
+	 * Entities are given the same component as a key for ease of access. Removed
+	 * components from the entity will still keep all the components tied to it
+	 * when accessed through the entity.
+	 */
+	
+	/**
+	 * Initializes the entity system.
+	 * @constructor
+	 */
+	function EntitySystem() {
+	  /**
+	   * True to have sets be created lazily.
+	   * @type {boolean}
+	   */
+	  this.isLazySets = false;
+	
+	  /**
+	   * UUID generator function.
+	   * @type {function}
+	   */
+	  this.generateUUID = function () {
+	    var current = counter;
+	    counter++;
+	    return current;
+	  };
+	
+	  /**
+	   * Counter for assigning entity IDs.
+	   * @type {Number}
+	   */
+	  var counter = 0;
+	
+	  /**
+	   * @type {Object.<String, Entity>}
+	   * Entities in the system.
+	   */
+	  var entities = {};
+	
+	  /**
+	   * Maps the component to entity relationship by entity ID.
+	   * @dict
+	   * Type is Map<String, Map<ComponentName, Component>>.
+	   */
+	  var entityComponentMap = {};
+	
+	  /**
+	   * Maps the component to entity relationship for removed entities by entity ID.
+	   * @dict
+	   * Type is Map<String, Map<ComponentName, Component>>.
+	   */
+	  var removedEntityComponentMap = {};
+	
+	  /**
+	   * Stores entity sets.
+	   * @dict
+	   * Type is Map<ComponentName, EntitySet>.
+	   */
+	  var entitySets = {};
+	
+	  /**
+	   * Creates an entity.
+	   * @param {Number|String=} id the ID of the entity to set.
+	   * @return {Entity} the created entity.
+	   */
+	  this.createEntity = function (id) {
+	    var entity = new _entity2.default(this.generateUUID());
+	    entities[entity.id] = entity;
+	
+	    // Add the entity to the component map.
+	    entityComponentMap[entity.id] = {};
+	
+	    return entity;
+	  };
+	
+	  /**
+	   * Checks if the system has the specified entity.
+	   * @param {Entity} entity the entity to check for.
+	   * @return {boolean} true if the entity is in the system.
+	   */
+	  this.hasEntity = function (entity) {
+	    var ent = entities[entity.id];
+	    if (!ent) return false;
+	    return ent === entity;
+	  };
+	
+	  /**
+	   * Retrieves an entity by ID.
+	   * @param {String|Number} id the ID of the entity.
+	   * @returns {Entity} the entity matching the ID or null if none found.
+	   */
+	  this.getEntityByID = function (id) {
+	    return entities[id] ? entities[id] : null;
+	  };
+	
+	  /**
+	   * Retrieves an entity by name.
+	   * @param {string} name the name of the entity.
+	   * @returns {Entity} the entity or null if none found.
+	   */
+	  this.getEntityByName = function (name) {
+	    for (var key in entities) {
+	      if (entities.hasOwnProperty(key)) {
+	        if (entities[key].name === name) {
+	          return entities[key];
+	        }
+	      }
+	    }
+	    return null;
+	  };
+	
+	  /**
+	   * Removes an entity.
+	   * @param {Entity} entity the entity to remove.
+	   */
+	  this.removeEntity = function (entity) {
+	    var storedEntity = entities[entity.id];
+	    if (!storedEntity) {
+	      return;
+	    }
+	
+	    // Move the entity's components to the removed map.
+	    removedEntityComponentMap[entity.id] = entityComponentMap[entity.id];
+	
+	    // Notify all sets of the removed entity.
+	    for (var componentName in entitySets) {
+	      entitySets[componentName].remove(entity);
+	    }
+	
+	    // Remove the entity.
+	    delete entities[entity.id];
+	  };
+	
+	  /**
+	   * Retrieves a component.
+	   * @param {Entity} entity the entity to retrieve the component from.
+	   * @param {string} componentName the name of the component to retrieve.
+	   * @returns {*} the component.
+	   */
+	  this.getComponent = function (entity, componentName) {
+	    var componentList = null;
+	    // Get the component of the entity if the active version has it.
+	    if (entityComponentMap[entity.id]) {
+	      componentList = entityComponentMap[entity.id];
+	      if (componentList[componentName]) {
+	        return componentList[componentName];
+	      } else {
+	        componentList = null;
+	      }
+	    }
+	    // Get the component of the removed version if there is no active.
+	    if (componentList === null) {
+	      if (removedEntityComponentMap[entity.id]) {
+	        componentList = removedEntityComponentMap[entity.id];
+	        if (componentList[componentName]) {
+	          return componentList[componentName];
+	        }
+	      }
+	    }
+	    return null;
+	  };
+	
+	  /**
+	   * Sets a component and updates the set to add to the added or changed list.
+	   * @param {Entity} entity the entity to set the component.
+	   * @param {string} componentName the name of the component.
+	   * @param {*} component the component.
+	   */
+	  this.setComponent = function (entity, componentName, component) {
+	    // Do not set components for entities outside of the system.
+	    if (!entities[entity.id]) {
+	      return;
+	    }
+	    var components = entityComponentMap[entity.id];
+	    // Give a reference to the component into the entity for easy access.
+	    entity[componentName] = component;
+	    // Update the set that matches the component if created.
+	    var entitySet;
+	    // Create a new set if no sets are found.
+	    if (!entitySets[componentName]) {
+	      // Set does not exist so component will not be set.
+	      if (this.isLazySets) {
+	        // Set the component for the entity map for lazy setting.
+	        components[componentName] = component;
+	        return;
+	      }
+	      entitySet = new _entitySet2.default();
+	      entitySets[componentName] = entitySet;
+	    } else {
+	      entitySet = entitySets[componentName];
+	    }
+	    // Update the set states.
+	    if (components[componentName]) {
+	      entitySet.change(entity);
+	    } else {
+	      entitySet.add(entity);
+	    }
+	    // Set the component for the entity map.
+	    components[componentName] = component;
+	  };
+	
+	  /**
+	   * Checks if an entity has a component.
+	   * @param {Entity} entity the entity to check.
+	   * @param {string} componentName the name of the component.
+	   * @returns {boolean} true if the entity has the component matching the name.
+	   */
+	  this.hasComponent = function (entity, componentName) {
+	    // Entities not in the system will not be checked.
+	    if (!entityComponentMap[entity.id]) {
+	      return false;
+	    }
+	    var components = entityComponentMap[entity.id];
+	    return components[componentName];
+	  };
+	
+	  /**
+	   * Removes a component from the entity.
+	   * @param {Entity} entity the entity to remove the component from.
+	   * @param {string} componentName the name of the component.
+	   */
+	  this.removeComponent = function (entity, componentName) {
+	    if (!entityComponentMap[entity.id]) {
+	      return;
+	    }
+	    // Keep the component in case a system needs it before flush.
+	    var components = entityComponentMap[entity.id];
+	    if (!removedEntityComponentMap[entity.id]) {
+	      removedEntityComponentMap[entity.id] = {};
+	    }
+	    removedEntityComponentMap[entity.id][componentName] = components[componentName];
+	
+	    // Remove the component from the active component list.
+	    delete entityComponentMap[entity.id][componentName];
+	
+	    // Update the sets that have the component.
+	    if (entitySets[componentName]) {
+	      entitySets[componentName].remove(entity);
+	    }
+	  };
+	
+	  /**
+	   * Retrieves all the entities matching the component name.
+	   * @param {String} componentName the name of the component.
+	   * @returns {EntitySet} the set of entities with the given component.
+	   */
+	  this.getEntities = function (componentName) {
+	    // Lazy creation of entity sets do not support removal before retrieval.
+	    if (!entitySets[componentName]) {
+	      var entitySet = new _entitySet2.default();
+	      // Add existing entities that match the component.
+	      for (var key in entities) {
+	        if (this.hasComponent(entities[key], componentName)) {
+	          entitySet.add(entities[key]);
+	        }
+	      }
+	      entitySets[componentName] = entitySet;
+	    }
+	
+	    return entitySets[componentName];
+	  };
+	
+	  /**
+	   * Retrieves all entities.
+	   * @returns {Object.<String, Entity>}
+	   */
+	  this.getAllEntities = function () {
+	    return entities;
+	  };
+	
+	  /**
+	   * Flushes the entity set changes.
+	   */
+	  this.flushChanges = function () {
+	    for (var componentName in entitySets) {
+	      if (entitySets.hasOwnProperty(componentName)) {
+	        entitySets[componentName].flush();
+	      }
+	    }
+	    removedEntityComponentMap = {};
+	  };
+	
+	  /**
+	   * Removes all entities from the system.
+	   */
+	  this.removeAllEntities = function () {
+	    for (var key in entities) {
+	      if (entities.hasOwnProperty(key)) {
+	        this.removeEntity(entities[key]);
+	      }
+	    }
+	  };
+	}
+	
+	exports.default = EntitySystem;
+
+/***/ },
+/* 14 */
+/***/ function(module, exports) {
+
+	"use strict";
+	
+	/**
+	 * Initializes an entity.
+	 * @param {number} permID permanent ID to assign to the entity.
+	 * @constructor
+	 */
+	
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	function Entity(permID) {
+	  /**
+	   * ID of the entity which can be either a number or unique string.
+	   * @type {Number|String}
+	   */
+	  var _id = permID;
+	
+	  /**
+	   * Name of the entity.
+	   * @type {string}
+	   */
+	  this.name = "";
+	
+	  /**
+	   * Data that systems do not need to keep track of.
+	   * Allows for quick setting and retrieval.
+	   * @dict
+	   */
+	  this.userData = {};
+	
+	  var doesIdExist = _id === undefined || _id === null;
+	  if (doesIdExist || typeof _id !== 'number' && typeof _id !== 'string') {
+	    throw new TypeError("Invalid ID");
+	  }
+	  /**
+	   * String representation of the entity.
+	   * @returns {string}
+	   */
+	  this.toString = function () {
+	    return "entity" + _id;
+	  };
+	
+	  Object.defineProperty(this, 'id', {
+	    get: function get() {
+	      return _id;
+	    },
+	    set: function set(val) {
+	      throw new Error('Cannot set entity ID after creation.');
+	    }
+	  });
+	}
+	
+	exports.default = Entity;
+
+/***/ },
+/* 15 */
+/***/ function(module, exports, __webpack_require__) {
+
+	"use strict";
+	
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	
+	var _set = __webpack_require__(16);
+	
+	var _set2 = _interopRequireDefault(_set);
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+	
+	/**
+	 * A set of entities with components in common.
+	 */
+	function EntitySet() {
+	  /**
+	   * All the entities in the set.
+	   * @type {DSSet.<Entity>}
+	   */
+	  var entities = new _set2.default();
+	
+	  /**
+	   * Newly added entities to the set.
+	   * @type {DSSet.<Entity>}
+	   */
+	  var addedEntities = new _set2.default();
+	
+	  /**
+	   * Newly changed entities in the set.
+	   * @type {DSSet.<Entity>}
+	   */
+	  var changedEntities = new _set2.default();
+	
+	  /**
+	   * Newly removed entities from the set.
+	   * @type {DSSet.<Entity>}
+	   */
+	  var removedEntities = new _set2.default();
+	
+	  /**
+	   * Callbacks to run when an entity is added.
+	   * @type {Array.<Function(Entity)>}
+	   */
+	  var addedCallbacks = [];
+	
+	  /**
+	   * Callbacks to run when an entity is changed.
+	   * @type {Array.<Function(Entity)>}
+	   */
+	  var changedCallbacks = [];
+	
+	  /**
+	   * Callbacks to run when an entity is removed.
+	   * @type {Array.<Function(Entity)>}
+	   */
+	  var removedCallbacks = [];
+	
+	  /**
+	   * Adds an entity.
+	   * An added entity will not be in the removed or changed sets unless set to change also.
+	   * @param {Entity} entity the entity to add.
+	   */
+	  this.add = function (entity) {
+	    if (entities.add(entity)) {
+	      removedEntities.remove(entity);
+	      changedEntities.remove(entity);
+	      addedEntities.add(entity);
+	
+	      // Run the callback functions.
+	      for (var i = 0; i < addedCallbacks.length; i++) {
+	        addedCallbacks[i](entity);
+	      }
+	    }
+	  };
+	
+	  /**
+	   * Add a changed entity.
+	   * @param {Entity} entity the entity to change.
+	   */
+	  this.change = function (entity) {
+	    if (entities.contains(entity)) {
+	      changedEntities.add(entity);
+	
+	      // Run the callback functions.
+	      for (var i = 0; i < changedCallbacks.length; i++) {
+	        changedCallbacks[i](entity);
+	      }
+	    }
+	  };
+	
+	  /**
+	   * Removes an entity.
+	   * A removed entity will not longer be in the added or changed sets.
+	   * @param {Entity} entity the entity to remove.
+	   */
+	  this.remove = function (entity) {
+	    if (entities.remove(entity)) {
+	      addedEntities.remove(entity);
+	      changedEntities.remove(entity);
+	      removedEntities.add(entity);
+	
+	      // Run the callback functions.
+	      for (var i = 0; i < removedCallbacks.length; i++) {
+	        removedCallbacks[i](entity);
+	      }
+	    }
+	  };
+	
+	  /**
+	   * Iterates over all entities.
+	   * @param {function(T, *)} func the function to call on each iteration.
+	   * @param {*=} context context variables to pass in.
+	   */
+	  this.each = function (func, context) {
+	    entities.each(func, context);
+	  };
+	
+	  /**
+	   * Iterates over the newly added entities.
+	   * @param {function(T, *)} func the function to call on each iteration.
+	   * @param {*=} context context variables to pass in.
+	   */
+	  this.eachAdded = function (func, context) {
+	    addedEntities.each(func, context);
+	  };
+	
+	  /**
+	   * Iterates over the newly changed entities.
+	   * @param {function(T, *)} func the function to call on each iteration.
+	   * @param {*=} context context variables to pass in.
+	   */
+	  this.eachChanged = function (func, context) {
+	    changedEntities.each(func, context);
+	  };
+	
+	  /**
+	   * Iterates over the newly removed entities.
+	   * @param {function(T, *)} func the function to call on each iteration.
+	   * @param {*=} context context variables to pass in.
+	   */
+	  this.eachRemoved = function (func, context) {
+	    removedEntities.each(func, context);
+	  };
+	
+	  /**
+	   * Checks if the set contains an entity.
+	   * @param {Entity} entity the entity to check if the set contains.
+	   * @return {boolean} true if the set contains the entity.
+	   */
+	  this.contains = function (entity) {
+	    return entities.contains(entity);
+	  };
+	
+	  /**
+	   * Retrieves the number of entities in the set.
+	   * @returns {Number} the number of entities in the set.
+	   */
+	  this.size = function () {
+	    return entities.size();
+	  };
+	
+	  /**
+	   * Flushes all the sets.
+	   */
+	  this.flush = function () {
+	    addedEntities.clear();
+	    changedEntities.clear();
+	    removedEntities.clear();
+	  };
+	
+	  /**
+	   * Retrieves all the entities in the set as a new array.
+	   * @returns {Array.<Entity>}
+	   */
+	  this.getAll = function () {
+	    return entities.getAll();
+	  };
+	
+	  /**
+	   * Retrieves all the entities in the set.
+	   * Do not modify the array directly.
+	   * @returns {Array.<Entity>}
+	   */
+	  this.getAllRaw = function () {
+	    return entities._objects;
+	  };
+	
+	  /**
+	   * Adds an add callback.
+	   * @param {function(Entity)} func the callback function.
+	   */
+	  this.addAddedCallback = function (func) {
+	    addedCallbacks.push(func);
+	  };
+	  /**
+	   * Removes an add callback.
+	   * @param {function(Entity)} func the callback function to remove.
+	   */
+	  this.removeAddedCallback = function (func) {
+	    var index = addedCallbacks.indexOf(func);
+	    if (index >= 0) {
+	      addedCallbacks.splice(index, 1);
+	    }
+	  };
+	  /**
+	   * Adds a changed callback.
+	   * @param {function(Entity)} func the callback function.
+	   */
+	  this.addChangedCallback = function (func) {
+	    changedCallbacks.push(func);
+	  };
+	  /**
+	   * Removes a changed callback.
+	   * @param {function(Entity)} func the callback function to remove.
+	   */
+	  this.removeChangedCallback = function (func) {
+	    var index = changedCallbacks.indexOf(func);
+	    if (index >= 0) {
+	      changedCallbacks.splice(index, 1);
+	    }
+	  };
+	  /**
+	   * Adds a removed callback.
+	   * @param {function(Entity)} func the callback function.
+	   */
+	  this.addRemovedCallback = function (func) {
+	    removedCallbacks.push(func);
+	  };
+	  /**
+	   * Removes a removed callback.
+	   * @param {function(Entity)} func the callback function to remove.
+	   */
+	  this.removeRemovedCallback = function (func) {
+	    var index = removedCallbacks.indexOf(func);
+	    if (index >= 0) {
+	      removedCallbacks.splice(index, 1);
+	    }
+	  };
+	
+	  /**
+	   * Clears the set and all the callbacks.
+	   */
+	  this.clear = function () {
+	    entities.clear();
+	    this.flush();
+	    addedCallbacks = [];
+	    changedCallbacks = [];
+	    removedCallbacks = [];
+	  };
+	}
+	
+	exports.default = EntitySet;
+
+/***/ },
+/* 16 */
+/***/ function(module, exports) {
+
+	"use strict";
+	
+	/**
+	 * Initializes the set.
+	 * @constructor
+	 * @template T
+	 */
+	
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	function DSSet() {
+	  /**
+	   * Objects in the set.
+	   * Retrieval of the objects is safe but modifying it directly will
+	   * not check for duplicates.
+	   * @type {Array.<T>}
+	   * @private
+	   */
+	  this._objects = [];
+	}
+	
+	/**
+	 * Adds an object to the set as long as it is unique.
+	 * @param {T} object the object to add.
+	 * @return {boolean} true if the object was added.
+	 */
+	DSSet.prototype.add = function (object) {
+	  if (!this.contains(object)) {
+	    this._objects.push(object);
+	    return true;
+	  }
+	  return false;
+	};
+	
+	/**
+	 * Removes an object from the set.
+	 * @param {T} object the object to remove.
+	 * @return {boolean} true if the object was removed.
+	 */
+	DSSet.prototype.remove = function (object) {
+	  var index = this._objects.indexOf(object);
+	  if (index > -1) {
+	    this._objects.splice(index, 1);
+	    return true;
+	  }
+	  return false;
+	};
+	
+	/**
+	 * Iterates over the objects and calls the given function.
+	 * @param {function(T, *)} func the function to call on each iteration.
+	 * @param {*=} context context variables to pass.
+	 */
+	DSSet.prototype.each = function (func, context) {
+	  for (var i = 0; i < this._objects.length; i++) {
+	    func(this._objects[i], context);
+	  }
+	};
+	
+	/**
+	 * Checks if the set contains an object.
+	 * @param {T} object the object to check if the set contains.
+	 * @return {boolean} true if the set contains the object.
+	 */
+	DSSet.prototype.contains = function (object) {
+	  return this._objects.indexOf(object) > -1;
+	};
+	
+	/**
+	 * Retrieves the number of objects in the set.
+	 * @returns {Number} the number of objects in the set.
+	 */
+	DSSet.prototype.size = function () {
+	  return this._objects.length;
+	};
+	
+	/**
+	 * Retrieves the objects in the set as a new array.
+	 * Modifications to the array does not affect the set.
+	 * @returns {Array.<T>}
+	 */
+	DSSet.prototype.getAll = function () {
+	  var objects = [];
+	  objects = objects.concat(this._objects);
+	  return objects;
+	};
+	
+	/**
+	 * Clears the set.
+	 */
+	DSSet.prototype.clear = function () {
+	  this._objects = [];
+	};
+	
+	exports.default = DSSet;
 
 /***/ }
 /******/ ]);

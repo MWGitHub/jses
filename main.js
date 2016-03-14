@@ -6,6 +6,7 @@ import { Viewport } from './src/pixi/viewport';
 import Camera from './src/pixi/camera';
 import StateSwitcher from './src/core/state-switcher';
 import { Input } from './src/core/input';
+import GameState from './lib/game-state';
 
 var Game = function () {
   var width = 683, height = 384;
@@ -33,12 +34,16 @@ var Game = function () {
   core.addPreRenderCallback(switcher.preRender.bind(switcher));
   core.addPostRenderCallback(switcher.postRender.bind(switcher));
 
+  var initialState = new GameState(viewport, input);
+  switcher.addState(initialState);
+  switcher.enterState(initialState);
+
   core.addPreRenderCallback((dt) => {
     viewport.update();
   });
 
-  core.addUpdateCallback((dt) => {
-    console.log(input.keysDown[Input.charToKeyCode('W')]);
+  core.addBeginCallback((dt) => {
+    input.update(dt);
   });
 
   core.addEndCallback((dt) => {
