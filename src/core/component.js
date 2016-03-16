@@ -20,13 +20,22 @@ Component.type = 'Component';
 Component.prototype.setParams = function (params) {};
 
 /**
+ * Makes a copy of the component.
+ * @type {{}} component the component to copy into.
+ * @type {{}} params the params or component to copy from.
+ */
+Component.copy = function (component) {
+  return JSON.parse(JSON.stringify(component));
+};
+
+/**
  * Returns the new value or the default value depending on if the new
  * value exists.
  * @param {*} newValue the new value to set if it exists.
  * @param {*} defaultValue the default value to fall back on.
  * @returns {*} the final value based on the value checks.
  */
-Component.copyField = function(newValue, defaultValue) {
+Component.copyField = function (newValue, defaultValue) {
     if (newValue === null || newValue === undefined) return defaultValue;
     return newValue;
 };
@@ -37,7 +46,7 @@ Component.copyField = function(newValue, defaultValue) {
  * @param {Array} arrayToCopy the array to copy.
  * @returns {Array} the copied array or the new array if no copy exists.
  */
-Component.copyPrimitiveArray = function(newArray, arrayToCopy) {
+Component.copyPrimitiveArray = function (newArray, arrayToCopy) {
     var arr = newArray ? newArray : [];
 
     if (arrayToCopy) {
