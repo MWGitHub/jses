@@ -26,6 +26,7 @@ function SpatialComponent(params) {
   this.setParams(params);
 }
 SpatialComponent.prototype = Object.create(Component.prototype);
+SpatialComponent.type = 'SpatialComponent';
 
 SpatialComponent.prototype.setParams = function (params) {
   if (params) {

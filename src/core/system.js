@@ -20,12 +20,6 @@ System.prototype.preUpdate = function (dt) {};
 System.prototype.update = function(dt) {};
 
 /**
- * Cleans up the system.
- * Other systems should not depend on the cleanup of another.
- */
-System.prototype.cleanup = function() {};
-
-/**
  * Destroys the system.
  */
 System.prototype.destroy = function() {};

@@ -1644,7 +1644,7 @@ var Game =
 	"use strict";
 	
 	Object.defineProperty(exports, "__esModule", {
-	  value: true
+		value: true
 	});
 	
 	var _state = __webpack_require__(12);
@@ -1657,34 +1657,60 @@ var Game =
 	
 	var _entitySystem2 = _interopRequireDefault(_entitySystem);
 	
+	var _pixiSystem = __webpack_require__(17);
+	
+	var _pixiSystem2 = _interopRequireDefault(_pixiSystem);
+	
+	var _spatialComponent = __webpack_require__(21);
+	
+	var _spatialComponent2 = _interopRequireDefault(_spatialComponent);
+	
+	var _shapeComponent = __webpack_require__(18);
+	
+	var _shapeComponent2 = _interopRequireDefault(_shapeComponent);
+	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
 	function GameState(viewport, input) {
-	  Object.call(_state2.default, this);
+		Object.call(_state2.default, this);
 	
-	  this._viewport = viewport;
-	  this._input = input;
+		this._viewport = viewport;
+		this._input = input;
 	
-	  this._scene = new _viewport.Scene();
-	  this._viewport.addScene(this._scene);
+		this._scene = new _viewport.Scene();
+		this._viewport.addScene(this._scene);
 	
-	  // Create and add the layers
-	  this._layers = {
-	    main: new PIXI.Container()
-	  };
-	  this._scene.display.addChild(this._layers.main);
+		// Create and add the layers
+		this._layers = {
+			main: new PIXI.Container()
+		};
+		this._scene.display.addChild(this._layers.main);
 	
-	  // Create the entity system and systems
-	  this._entitySystem = new _entitySystem2.default();
-	  this.systems = [];
+		// Create the entity system and systems
+		this._entitySystem = new _entitySystem2.default();
+		this._systems = [new _pixiSystem2.default(this._entitySystem, this._layers)];
 	}
 	GameState.prototype = Object.create(_state2.default.prototype);
 	
-	GameState.prototype.onEnter = function (params) {};
+	GameState.prototype.onEnter = function (params) {
+		var entity = this._entitySystem.createEntity();
+		this._entitySystem.setComponent(entity, _spatialComponent2.default.type, new _spatialComponent2.default());
+		this._entitySystem.setComponent(entity, _shapeComponent2.default.type, new _shapeComponent2.default({
+			shapes: [['']]
+		}));
+	};
 	
-	GameState.prototype.update = function (dt) {};
+	GameState.prototype.update = function (dt) {
+		for (var i = 0; i < this._systems.length; i++) {
+			this._systems[i].update(dt);
+		}
+	};
 	
-	GameState.prototype.onLeave = function (params) {};
+	GameState.prototype.onLeave = function (params) {
+		for (var i = 0; i < this._systems.length; i++) {
+			this._systems[i].destroy();
+		}
+	};
 	
 	exports.default = GameState;
 
@@ -2499,6 +2525,326 @@ var Game =
 	};
 	
 	exports.default = DSSet;
+
+/***/ },
+/* 17 */
+/***/ function(module, exports, __webpack_require__) {
+
+	"use strict";
+	
+	Object.defineProperty(exports, "__esModule", {
+		value: true
+	});
+	
+	var _system = __webpack_require__(20);
+	
+	var _system2 = _interopRequireDefault(_system);
+	
+	var _shapeComponent = __webpack_require__(18);
+	
+	var _shapeComponent2 = _interopRequireDefault(_shapeComponent);
+	
+	var _spatialComponent = __webpack_require__(21);
+	
+	var _spatialComponent2 = _interopRequireDefault(_spatialComponent);
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+	
+	function getShapeFunction(graphics, op) {
+		switch (op) {
+			case "arc":
+			case "arcTo":
+			case "beginFill":
+			case "bezierCurveTo":
+			case "clear":
+			case "destroy":
+			case "drawCircle":
+			case "drawEllipse":
+			case "drawPolygon":
+			case "drawRect":
+			case "drawRoundedRect":
+			case "drawShape":
+			case "endFill":
+			case "generateTexture":
+			case "getBounds":
+			case "getChildAt":
+			case "getChildIndex":
+			case "getLocalBounds":
+			case "lineStyle":
+			case "lineTo":
+			case "moveTo":
+			case "quadraticCurveTo":
+		}
+	}
+	
+	/**
+	 * Renders graphics components with Pixi.
+	 * @param {EntitySystem} entitySystem the entity system to retrieve from.
+	 * @param {Dictionary} layers the layers to add to.
+	 */
+	var PIXISystem = function PIXISystem(entitySystem, layers) {
+		_system2.default.call(this);
+	
+		this._entitySystem = entitySystem;
+		this._layers = layers;
+	
+		// Object with entity id as the key and an array of graphics.
+		this._entityGraphics = {};
+	};
+	PIXISystem.prototype = Object.create(_system2.default.prototype);
+	
+	PIXISystem.prototype.update = function (dt) {
+		var _this = this;
+	
+		var entitySet = this._entitySystem.getEntities(_shapeComponent2.default.type);
+	
+		// Create components
+		entitySet.eachAdded(function (entity) {
+			var shapeComponent = entity.getComponent(_shapeComponent2.default.type);
+	
+			// Create shape if provided
+			var shapes = shapeComponent.shapes;
+			if (shapes.length > 0) {
+				var graphics = new PIXI.Graphics();
+				for (var i = 0; i < shapes.length; i++) {
+					var command = shapes[i];
+	
+					graphics[command[0]].apply(graphics, command);
+				}
+				_this._layers[shapeComponent.layer].addChild(graphics);
+				_this._entityGraphics[entity.id] = _this._entityGraphics[entity.id] || [];
+				_this._entityGraphics.push(graphics);
+			}
+		});
+	
+		// Update all components
+		entitySet.each(function (entity) {
+			var shapeComponent = entity.getComponent(_shapeComponent2.default.type);
+			var spatial = entity.getComponent(_spatialComponent2.default.type);
+			var graphicsArray = _this._entityGraphics[entity.id];
+			if (spatial) {
+				for (var i = 0; i < graphicsArray.length; i++) {
+					var graphics = graphicsArray[i];
+					graphics.x = spatial.position.x;
+					graphics.y = spatial.position.y;
+					graphics.scale.x = spatial.scale.x;
+					graphics.scale.y = spatial.scale.y;
+					graphics.rotation = spatial.rotation;
+				}
+			}
+		});
+	
+		// Remove deleted components
+		entitySet.eachRemoved(function (entity) {
+			var graphicsArray = _this._entityGraphics[entity.id];
+			for (var i = 0; i < graphicsArray.length; i++) {
+				var graphics = graphicsArray[i];
+				var parent = graphics.parent;
+				if (parent) {
+					parent.removeChild(graphics);
+				}
+			}
+		});
+	};
+	
+	exports.default = PIXISystem;
+
+/***/ },
+/* 18 */
+/***/ function(module, exports, __webpack_require__) {
+
+	"use strict";
+	
+	var _component = __webpack_require__(19);
+	
+	var _component2 = _interopRequireDefault(_component);
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+	
+	/**
+	 * Component for pixi graphics objects.
+	 * @constructor
+	 */
+	function ShapeComponent(params) {
+		_component2.default.call(this);
+	
+		this.layer = null;
+	
+		/**
+	  * Shapes commands given in order for drawing.
+	  * Arguments for the drawing command is passed in as an array.
+	  * @type {[[*]]}
+	  */
+		this.shapes = [];
+	}
+	ShapeComponent.prototype = Object.create(_component2.default.prototype);
+	ShapeComponent.type = 'ShapeComponent';
+	
+	ShapeComponent.prototype.setParams = function (params) {
+		this.layer = _component2.default.copyField(params.layer, this.layer);
+		this.shapes = JSON.parse(JSON.stringify(params.shapes)) || [];
+	};
+
+/***/ },
+/* 19 */
+/***/ function(module, exports) {
+
+	"use strict";
+	
+	/**
+	 * Optional base class for components.
+	 * Components do not have to extend this. They only need to implement
+	 * the class methods to be compatible with systems.
+	 */
+	
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	var Component = function Component() {};
+	
+	/**
+	 * Type of component which is used for component retrieval and setting.
+	 * @type {string}
+	 */
+	Component.type = 'Component';
+	
+	/**
+	 * Sets parameters onto the component.
+	 * @param {Object} params the parameters to set.
+	 */
+	Component.prototype.setParams = function (params) {};
+	
+	/**
+	 * Makes a copy of the component.
+	 * @type {{}} component the component to copy into.
+	 * @type {{}} params the params or component to copy from.
+	 */
+	Component.copy = function (component) {
+	  return JSON.parse(JSON.stringify(component));
+	};
+	
+	/**
+	 * Returns the new value or the default value depending on if the new
+	 * value exists.
+	 * @param {*} newValue the new value to set if it exists.
+	 * @param {*} defaultValue the default value to fall back on.
+	 * @returns {*} the final value based on the value checks.
+	 */
+	Component.copyField = function (newValue, defaultValue) {
+	  if (newValue === null || newValue === undefined) return defaultValue;
+	  return newValue;
+	};
+	
+	/**
+	 * Copies an array if the copied array exists.
+	 * @param {Array} newArray the array to copy into.
+	 * @param {Array} arrayToCopy the array to copy.
+	 * @returns {Array} the copied array or the new array if no copy exists.
+	 */
+	Component.copyPrimitiveArray = function (newArray, arrayToCopy) {
+	  var arr = newArray ? newArray : [];
+	
+	  if (arrayToCopy) {
+	    return arr.concat(arrayToCopy);
+	  }
+	  return arr;
+	};
+	
+	exports.default = Component;
+
+/***/ },
+/* 20 */
+/***/ function(module, exports) {
+
+	"use strict";
+	
+	/**
+	 * Initializes the base system class.
+	 * @constructor
+	 */
+	
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	function System() {}
+	
+	/**
+	 * Updates the system before the normal update.
+	 * Used before game logic updates.
+	 * @param {Number} dt the time between updates.
+	 */
+	System.prototype.preUpdate = function (dt) {};
+	
+	/**
+	 * Updates the system.
+	 * @param {Number} dt the time between updates.
+	 */
+	System.prototype.update = function (dt) {};
+	
+	/**
+	 * Destroys the system.
+	 */
+	System.prototype.destroy = function () {};
+	
+	exports.default = System;
+
+/***/ },
+/* 21 */
+/***/ function(module, exports, __webpack_require__) {
+
+	"use strict";
+	
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	
+	var _component = __webpack_require__(!(function webpackMissingModule() { var e = new Error("Cannot find module \"../component\""); e.code = 'MODULE_NOT_FOUND'; throw e; }()));
+	
+	var _component2 = _interopRequireDefault(_component);
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+	
+	function SpatialComponent(params) {
+	  _component2.default.call(this);
+	
+	  /**
+	   * Position of the spatial.
+	   * @type {{x: Number, y: Number }}
+	   */
+	  this.position = { x: 0, y: 0 };
+	
+	  /**
+	   * Scale for the spatial.
+	   * @type {{x: Number, y: Number}}
+	   */
+	  this.scale = { x: 1, y: 1 };
+	
+	  /**
+	   * Rotation in radians.
+	   * @type {Number}
+	   */
+	  this.rotation = 0;
+	
+	  this.setParams(params);
+	}
+	SpatialComponent.prototype = Object.create(_component2.default.prototype);
+	SpatialComponent.type = 'SpatialComponent';
+	
+	SpatialComponent.prototype.setParams = function (params) {
+	  if (params) {
+	    if (params.position) {
+	      this.position.x = _component2.default.copyField(params.position.x, this.position.x);
+	      this.position.y = _component2.default.copyField(params.position.y, this.position.y);
+	    }
+	    if (params.scale) {
+	      this.scale.x = _component2.default.copyField(params.scale.x, 1);
+	      this.scale.y = _component2.default.copyField(params.scale.y, 1);
+	    }
+	    this.rotation = _component2.default.copyField(params.rotation, this.rotation);
+	  }
+	};
+	
+	exports.default = SpatialComponent;
 
 /***/ }
 /******/ ]);
