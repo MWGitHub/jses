@@ -1,6 +1,6 @@
 "use strict";
 
-import Component from '../component';
+import Component from '../core/component';
 
 function SpatialComponent(params) {
   Component.call(this);

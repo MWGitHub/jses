@@ -1644,7 +1644,7 @@ var Game =
 	"use strict";
 	
 	Object.defineProperty(exports, "__esModule", {
-		value: true
+	  value: true
 	});
 	
 	var _state = __webpack_require__(12);
@@ -1665,51 +1665,52 @@ var Game =
 	
 	var _spatialComponent2 = _interopRequireDefault(_spatialComponent);
 	
-	var _shapeComponent = __webpack_require__(18);
+	var _shapeComponent = __webpack_require__(19);
 	
 	var _shapeComponent2 = _interopRequireDefault(_shapeComponent);
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
 	function GameState(viewport, input) {
-		Object.call(_state2.default, this);
+	  Object.call(_state2.default, this);
 	
-		this._viewport = viewport;
-		this._input = input;
+	  this._viewport = viewport;
+	  this._input = input;
 	
-		this._scene = new _viewport.Scene();
-		this._viewport.addScene(this._scene);
+	  this._scene = new _viewport.Scene();
+	  this._viewport.addScene(this._scene);
 	
-		// Create and add the layers
-		this._layers = {
-			main: new PIXI.Container()
-		};
-		this._scene.display.addChild(this._layers.main);
+	  // Create and add the layers
+	  this._layers = {
+	    main: new PIXI.Container()
+	  };
+	  this._scene.display.addChild(this._layers.main);
 	
-		// Create the entity system and systems
-		this._entitySystem = new _entitySystem2.default();
-		this._systems = [new _pixiSystem2.default(this._entitySystem, this._layers)];
+	  // Create the entity system and systems
+	  this._entitySystem = new _entitySystem2.default();
+	  this._systems = [new _pixiSystem2.default(this._entitySystem, this._layers)];
 	}
 	GameState.prototype = Object.create(_state2.default.prototype);
 	
 	GameState.prototype.onEnter = function (params) {
-		var entity = this._entitySystem.createEntity();
-		this._entitySystem.setComponent(entity, _spatialComponent2.default.type, new _spatialComponent2.default());
-		this._entitySystem.setComponent(entity, _shapeComponent2.default.type, new _shapeComponent2.default({
-			shapes: [['']]
-		}));
+	  var entity = this._entitySystem.createEntity();
+	  this._entitySystem.setComponent(entity, _spatialComponent2.default.type, new _spatialComponent2.default());
+	  this._entitySystem.setComponent(entity, _shapeComponent2.default.type, new _shapeComponent2.default({
+	    shapes: [['beginFill', 12312], ['moveTo', 0, 0], ['lineTo', -50, 100], ['lineTo', 50, 100], ['endFill']],
+	    layer: 'main'
+	  }));
 	};
 	
 	GameState.prototype.update = function (dt) {
-		for (var i = 0; i < this._systems.length; i++) {
-			this._systems[i].update(dt);
-		}
+	  for (var i = 0; i < this._systems.length; i++) {
+	    this._systems[i].update(dt);
+	  }
 	};
 	
 	GameState.prototype.onLeave = function (params) {
-		for (var i = 0; i < this._systems.length; i++) {
-			this._systems[i].destroy();
-		}
+	  for (var i = 0; i < this._systems.length; i++) {
+	    this._systems[i].destroy();
+	  }
 	};
 	
 	exports.default = GameState;
@@ -2536,11 +2537,11 @@ var Game =
 		value: true
 	});
 	
-	var _system = __webpack_require__(20);
+	var _system = __webpack_require__(18);
 	
 	var _system2 = _interopRequireDefault(_system);
 	
-	var _shapeComponent = __webpack_require__(18);
+	var _shapeComponent = __webpack_require__(19);
 	
 	var _shapeComponent2 = _interopRequireDefault(_shapeComponent);
 	
@@ -2549,33 +2550,6 @@ var Game =
 	var _spatialComponent2 = _interopRequireDefault(_spatialComponent);
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-	
-	function getShapeFunction(graphics, op) {
-		switch (op) {
-			case "arc":
-			case "arcTo":
-			case "beginFill":
-			case "bezierCurveTo":
-			case "clear":
-			case "destroy":
-			case "drawCircle":
-			case "drawEllipse":
-			case "drawPolygon":
-			case "drawRect":
-			case "drawRoundedRect":
-			case "drawShape":
-			case "endFill":
-			case "generateTexture":
-			case "getBounds":
-			case "getChildAt":
-			case "getChildIndex":
-			case "getLocalBounds":
-			case "lineStyle":
-			case "lineTo":
-			case "moveTo":
-			case "quadraticCurveTo":
-		}
-	}
 	
 	/**
 	 * Renders graphics components with Pixi.
@@ -2598,29 +2572,29 @@ var Game =
 	
 		var entitySet = this._entitySystem.getEntities(_shapeComponent2.default.type);
 	
-		// Create components
+		// Create component
 		entitySet.eachAdded(function (entity) {
-			var shapeComponent = entity.getComponent(_shapeComponent2.default.type);
+			var shapeComponent = _this._entitySystem.getComponent(entity, _shapeComponent2.default.type);
 	
 			// Create shape if provided
 			var shapes = shapeComponent.shapes;
 			if (shapes.length > 0) {
 				var graphics = new PIXI.Graphics();
 				for (var i = 0; i < shapes.length; i++) {
-					var command = shapes[i];
-	
-					graphics[command[0]].apply(graphics, command);
+					var command = shapes[i][0];
+					var args = shapes[i].slice(1);
+					Object.getPrototypeOf(graphics)[command].apply(graphics, args);
 				}
 				_this._layers[shapeComponent.layer].addChild(graphics);
 				_this._entityGraphics[entity.id] = _this._entityGraphics[entity.id] || [];
-				_this._entityGraphics.push(graphics);
+				_this._entityGraphics[entity.id].push(graphics);
 			}
 		});
 	
 		// Update all components
 		entitySet.each(function (entity) {
-			var shapeComponent = entity.getComponent(_shapeComponent2.default.type);
-			var spatial = entity.getComponent(_spatialComponent2.default.type);
+			var shapeComponent = _this._entitySystem.getComponent(entity, _shapeComponent2.default.type);
+			var spatial = _this._entitySystem.getComponent(entity, _spatialComponent2.default.type);
 			var graphicsArray = _this._entityGraphics[entity.id];
 			if (spatial) {
 				for (var i = 0; i < graphicsArray.length; i++) {
@@ -2651,11 +2625,51 @@ var Game =
 
 /***/ },
 /* 18 */
+/***/ function(module, exports) {
+
+	"use strict";
+	
+	/**
+	 * Initializes the base system class.
+	 * @constructor
+	 */
+	
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	function System() {}
+	
+	/**
+	 * Updates the system before the normal update.
+	 * Used before game logic updates.
+	 * @param {Number} dt the time between updates.
+	 */
+	System.prototype.preUpdate = function (dt) {};
+	
+	/**
+	 * Updates the system.
+	 * @param {Number} dt the time between updates.
+	 */
+	System.prototype.update = function (dt) {};
+	
+	/**
+	 * Destroys the system.
+	 */
+	System.prototype.destroy = function () {};
+	
+	exports.default = System;
+
+/***/ },
+/* 19 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
 	
-	var _component = __webpack_require__(19);
+	Object.defineProperty(exports, "__esModule", {
+		value: true
+	});
+	
+	var _component = __webpack_require__(20);
 	
 	var _component2 = _interopRequireDefault(_component);
 	
@@ -2676,6 +2690,8 @@ var Game =
 	  * @type {[[*]]}
 	  */
 		this.shapes = [];
+	
+		this.setParams(params);
 	}
 	ShapeComponent.prototype = Object.create(_component2.default.prototype);
 	ShapeComponent.type = 'ShapeComponent';
@@ -2684,9 +2700,11 @@ var Game =
 		this.layer = _component2.default.copyField(params.layer, this.layer);
 		this.shapes = JSON.parse(JSON.stringify(params.shapes)) || [];
 	};
+	
+	exports.default = ShapeComponent;
 
 /***/ },
-/* 19 */
+/* 20 */
 /***/ function(module, exports) {
 
 	"use strict";
@@ -2753,42 +2771,6 @@ var Game =
 	exports.default = Component;
 
 /***/ },
-/* 20 */
-/***/ function(module, exports) {
-
-	"use strict";
-	
-	/**
-	 * Initializes the base system class.
-	 * @constructor
-	 */
-	
-	Object.defineProperty(exports, "__esModule", {
-	  value: true
-	});
-	function System() {}
-	
-	/**
-	 * Updates the system before the normal update.
-	 * Used before game logic updates.
-	 * @param {Number} dt the time between updates.
-	 */
-	System.prototype.preUpdate = function (dt) {};
-	
-	/**
-	 * Updates the system.
-	 * @param {Number} dt the time between updates.
-	 */
-	System.prototype.update = function (dt) {};
-	
-	/**
-	 * Destroys the system.
-	 */
-	System.prototype.destroy = function () {};
-	
-	exports.default = System;
-
-/***/ },
 /* 21 */
 /***/ function(module, exports, __webpack_require__) {
 
@@ -2798,7 +2780,7 @@ var Game =
 	  value: true
 	});
 	
-	var _component = __webpack_require__(!(function webpackMissingModule() { var e = new Error("Cannot find module \"../component\""); e.code = 'MODULE_NOT_FOUND'; throw e; }()));
+	var _component = __webpack_require__(20);
 	
 	var _component2 = _interopRequireDefault(_component);
 	

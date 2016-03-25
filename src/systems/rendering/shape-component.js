@@ -17,6 +17,8 @@ function ShapeComponent(params) {
 	 * @type {[[*]]}
 	 */
 	this.shapes = [];
+
+  this.setParams(params);
 }
 ShapeComponent.prototype = Object.create(Component.prototype);
 ShapeComponent.type = 'ShapeComponent';
@@ -25,3 +27,6 @@ ShapeComponent.prototype.setParams = function (params) {
 	this.layer = Component.copyField(params.layer, this.layer);
 	this.shapes = JSON.parse(JSON.stringify(params.shapes)) || [];
 };
+
+
+export default ShapeComponent;
