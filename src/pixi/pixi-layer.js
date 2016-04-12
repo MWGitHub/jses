@@ -1,6 +1,7 @@
 "use strict";
 
 import RenderLayer from '../core/render-layer';
+import { WebGLRenderer, Container } from 'pixi.js';
 
 /**
  * Pixi rendering layer which uses WebGL.
@@ -15,13 +16,13 @@ function PIXILayer (element) {
    * Renderer for the layer.
    * @type {PIXI.WebGLRenderer}
    */
-  this.renderer = new PIXI.WebGLRenderer(1366, 768);
+  this.renderer = new WebGLRenderer(1366, 768);
 
   /**
    * Stage to add objects to.
    * @type {PIXI.Stage}
    */
-  this.stage = new PIXI.Container();
+  this.stage = new Container();
 
   element.appendChild(this.renderer.view);
 }

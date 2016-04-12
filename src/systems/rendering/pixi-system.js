@@ -1,5 +1,6 @@
 "use strict";
 
+import { Graphics } from 'pixi.js';
 import System from '../../core/system';
 import ShapeComponent from './shape-component';
 import SpatialComponent from '../spatial-component';
@@ -20,6 +21,33 @@ var PIXISystem = function (entitySystem, layers) {
 };
 PIXISystem.prototype = Object.create(System.prototype);
 
+function convertArguments(args) {
+  return args.map(arg => {
+    if (typeof arg === 'string') {
+      if (arg[0] === '#') {
+        return parseInt('0x' + arg.slice(1));
+      }
+    }
+    return arg;
+  });
+}
+
+PIXISystem.prototype._createShape = function(entity, component) {
+  // Create shape if provided
+  let shapes = component.shapes;
+  if (shapes.length > 0) {
+    let graphics = new Graphics();
+    for (let i = 0; i < shapes.length; i++) {
+      let command = shapes[i][0];
+      let args = convertArguments(shapes[i].slice(1));
+      Object.getPrototypeOf(graphics)[command].apply(graphics, args);
+    }
+    this._layers[component.layer].addChild(graphics);
+    this._entityGraphics[entity.id] = this._entityGraphics[entity.id] || [];
+    this._entityGraphics[entity.id].push(graphics);
+  }
+};
+
 PIXISystem.prototype.update = function (dt) {
 	let entitySet = this._entitySystem.getEntities(ShapeComponent.type);
 
@@ -27,20 +55,9 @@ PIXISystem.prototype.update = function (dt) {
 	entitySet.eachAdded((entity) => {
 		let shapeComponent = this._entitySystem.getComponent(entity,
       ShapeComponent.type);
-
-		// Create shape if provided
-		var shapes = shapeComponent.shapes;
-		if (shapes.length > 0) {
-			let graphics = new PIXI.Graphics();
-			for (let i = 0; i < shapes.length; i++) {
-				let command = shapes[i][0];
-        let args = shapes[i].slice(1);
-				Object.getPrototypeOf(graphics)[command].apply(graphics, args);
-			}
-			this._layers[shapeComponent.layer].addChild(graphics);
-			this._entityGraphics[entity.id] = this._entityGraphics[entity.id] || [];
-			this._entityGraphics[entity.id].push(graphics);
-		}
+    if (shapeComponent) {
+      this._createShape(entity, shapeComponent);
+    }
 	});
 
 	// Update all components

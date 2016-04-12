@@ -2,6 +2,11 @@
 
 import Component from '../core/component';
 
+/**
+ * Keeps track of where an entity is in the world.
+ * @param {object} params the initial parameters to set.
+ * @extends Component
+ */
 function SpatialComponent(params) {
   Component.call(this);
 

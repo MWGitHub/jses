@@ -1,5 +1,7 @@
 "use strict";
 
+import { Container } from 'pixi.js';
+
 /**
  * Represents a viewport for pixi.
  * A viewport is not shown until added to a displayable object such as stage.
@@ -15,7 +17,7 @@ function Scene() {
    * Display used for updating with the camera.
    * @type {PIXI.Container}
    */
-  this.display = new PIXI.Container();
+  this.display = new Container();
 
   /**
    * True to lock the scene to no longer be scrollable.
@@ -36,7 +38,7 @@ function Viewport(camera, width, height) {
    * Main display of the viewport.
    * @type {PIXI.Container}
    */
-  this.display = new PIXI.Container();
+  this.display = new Container();
 
   /**
    * Scenes for the viewport.

@@ -7,12 +7,16 @@ module.exports = {
   entry: './main.js',
   output: {
     path: __dirname,
-    filename: './static/js/bundle.js',
+    filename: './assets/js/bundle.js',
     libraryTarget: 'var',
     library: 'Game'
   },
   module: {
     loaders: [
+      {
+        test: /\.json$/,
+        loader: 'json'
+      },
       {
         test: /.js$/,
         loader: 'babel-loader',
@@ -20,6 +24,12 @@ module.exports = {
         query: {
           presets: ['es2015']
         }
+      }
+    ],
+    postLoaders: [
+      {
+        include: path.resolve(__dirname, 'node_modules/pixi.js'),
+        loader: 'transform?brfs'
       }
     ]
   },
