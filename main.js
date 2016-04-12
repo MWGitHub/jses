@@ -5,11 +5,11 @@ import PIXILayer from './src/pixi/pixi-layer';
 import { Viewport } from './src/pixi/viewport';
 import Camera from './src/pixi/camera';
 import StateSwitcher from './src/core/state-switcher';
-import { Input } from './src/core/input';
+import Input from './src/core/input';
 import GameState from './lib/game-state';
 
 var Game = function () {
-  var width = 683, height = 384;
+  var width = 1024, height = 576;
   var gameElement = document.getElementById('content');
 
   var core = new Core(window);

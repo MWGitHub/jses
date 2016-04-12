@@ -17,7 +17,17 @@ Component.type = 'Component';
  * Sets parameters onto the component.
  * @param {Object} params the parameters to set.
  */
-Component.prototype.setParams = function (params) {};
+Component.prototype.setParams = function (params) {
+  this.merge(params);
+};
+
+/**
+ * Merges the input component to this.
+ * @param  {Object} component the component to merge with.
+ */
+Component.prototype.merge = function (component) {
+  Object.assign(this, component);
+};
 
 /**
  * Makes a copy of the component.

@@ -67,6 +67,8 @@ var Game =
 	
 	var _input = __webpack_require__(144);
 	
+	var _input2 = _interopRequireDefault(_input);
+	
 	var _gameState = __webpack_require__(145);
 	
 	var _gameState2 = _interopRequireDefault(_gameState);
@@ -74,8 +76,8 @@ var Game =
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
 	var Game = function Game() {
-	  var width = 683,
-	      height = 384;
+	  var width = 1024,
+	      height = 576;
 	  var gameElement = document.getElementById('content');
 	
 	  var core = new _core2.default(window);
@@ -85,7 +87,7 @@ var Game =
 	  core.addRenderLayer(pixiLayer);
 	
 	  // Create the input
-	  var input = new _input.Input(window, gameElement);
+	  var input = new _input2.default(window, gameElement);
 	
 	  // Create the main viewport and camera
 	  var camera = new _camera2.default();
@@ -30594,6 +30596,9 @@ var Game =
 
 	/* WEBPACK VAR INJECTION */(function(process) {"use strict";
 	
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
 	var isBrowser = true;
 	if (process && process.argv.length !== 0) {
 	  isBrowser = false;
@@ -31140,7 +31145,8 @@ var Game =
 	  Start: padName + 9
 	};
 	
-	module.exports.Input = Input;
+	exports.default = Input;
+	
 	module.exports.MouseButtons = Input.MouseButtons;
 	module.exports.MouseCodes = Input.MouseCodes;
 	module.exports.CharCodes = Input.CharCodes;
@@ -31171,6 +31177,18 @@ var Game =
 	
 	var _pixiSystem2 = _interopRequireDefault(_pixiSystem);
 	
+	var _controlSystem = __webpack_require__(159);
+	
+	var _controlSystem2 = _interopRequireDefault(_controlSystem);
+	
+	var _movementSystem = __webpack_require__(162);
+	
+	var _movementSystem2 = _interopRequireDefault(_movementSystem);
+	
+	var _gameObjectSystem = __webpack_require__(163);
+	
+	var _gameObjectSystem2 = _interopRequireDefault(_gameObjectSystem);
+	
 	var _spatialComponent = __webpack_require__(155);
 	
 	var _spatialComponent2 = _interopRequireDefault(_spatialComponent);
@@ -31179,11 +31197,23 @@ var Game =
 	
 	var _shapeComponent2 = _interopRequireDefault(_shapeComponent);
 	
-	var _objectCreator = __webpack_require__(156);
+	var _controlComponent = __webpack_require__(160);
+	
+	var _controlComponent2 = _interopRequireDefault(_controlComponent);
+	
+	var _movementComponent = __webpack_require__(161);
+	
+	var _movementComponent2 = _interopRequireDefault(_movementComponent);
+	
+	var _gameObjectComponent = __webpack_require__(164);
+	
+	var _gameObjectComponent2 = _interopRequireDefault(_gameObjectComponent);
+	
+	var _objectCreator = __webpack_require__(157);
 	
 	var _objectCreator2 = _interopRequireDefault(_objectCreator);
 	
-	var _ship = __webpack_require__(157);
+	var _ship = __webpack_require__(158);
 	
 	var _ship2 = _interopRequireDefault(_ship);
 	
@@ -31197,6 +31227,8 @@ var Game =
 	
 	  this._scene = new _viewport.Scene();
 	  this._viewport.addScene(this._scene);
+	  this._viewport.camera.position.x = this._viewport.width / 2;
+	  this._viewport.camera.position.y = this._viewport.height / 2;
 	
 	  // Create and add the layers
 	  this._layers = {
@@ -31206,7 +31238,12 @@ var Game =
 	
 	  // Create the entity system and systems
 	  this._entitySystem = new _entitySystem2.default();
-	  this._systems = [new _pixiSystem2.default(this._entitySystem, this._layers)];
+	  this._systems = [new _controlSystem2.default(this._entitySystem, input), new _movementSystem2.default(this._entitySystem), new _gameObjectSystem2.default(this._entitySystem, {
+	    top: 0,
+	    right: this._viewport.width,
+	    bottom: this._viewport.height,
+	    left: 0
+	  }), new _pixiSystem2.default(this._entitySystem, this._layers)];
 	
 	  /**
 	   * Object creator for creating game objects.
@@ -31215,12 +31252,18 @@ var Game =
 	  this._objectCreator = new _objectCreator2.default(this._entitySystem);
 	  this._objectCreator.addComponent(_spatialComponent2.default.type, _spatialComponent2.default);
 	  this._objectCreator.addComponent(_shapeComponent2.default.type, _shapeComponent2.default);
+	  this._objectCreator.addComponent(_controlComponent2.default.type, _controlComponent2.default);
+	  this._objectCreator.addComponent(_movementComponent2.default.type, _movementComponent2.default);
+	  this._objectCreator.addComponent(_gameObjectComponent2.default.type, _gameObjectComponent2.default);
 	  this._objectCreator.storeBlueprint('ship', _ship2.default);
 	}
 	GameState.prototype = Object.create(_state2.default.prototype);
 	
 	GameState.prototype.onEnter = function (params) {
 	  var entity = this._objectCreator.createFromBlueprint('ship');
+	  var spatial = entity[_spatialComponent2.default.type];
+	  spatial.position.x = this._viewport.width / 2;
+	  spatial.position.y = this._viewport.height / 2;
 	};
 	
 	GameState.prototype.update = function (dt) {
@@ -32270,7 +32313,17 @@ var Game =
 	 * Sets parameters onto the component.
 	 * @param {Object} params the parameters to set.
 	 */
-	Component.prototype.setParams = function (params) {};
+	Component.prototype.setParams = function (params) {
+	  this.merge(params);
+	};
+	
+	/**
+	 * Merges the input component to this.
+	 * @param  {Object} component the component to merge with.
+	 */
+	Component.prototype.merge = function (component) {
+	  Object.assign(this, component);
+	};
 	
 	/**
 	 * Makes a copy of the component.
@@ -32374,7 +32427,8 @@ var Game =
 	exports.default = SpatialComponent;
 
 /***/ },
-/* 156 */
+/* 156 */,
+/* 157 */
 /***/ function(module, exports) {
 
 	"use strict";
@@ -32536,11 +32590,23 @@ var Game =
 	exports.default = ObjectCreator;
 
 /***/ },
-/* 157 */
+/* 158 */
 /***/ function(module, exports) {
 
 	module.exports = {
 		"components": {
+			"ControlComponent": {
+				"velocity": {
+					"x": 250,
+					"y": 250
+				}
+			},
+			"GameObjectComponent": {
+				"isBound": true
+			},
+			"MovementComponent": {
+				"damping": 0.7
+			},
 			"SpatialComponent": {},
 			"ShapeComponent": {
 				"shapes": [
@@ -32572,6 +32638,446 @@ var Game =
 			}
 		}
 	};
+
+/***/ },
+/* 159 */
+/***/ function(module, exports, __webpack_require__) {
+
+	"use strict";
+	
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	
+	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+	
+	var _system = __webpack_require__(152);
+	
+	var _system2 = _interopRequireDefault(_system);
+	
+	var _input = __webpack_require__(144);
+	
+	var _input2 = _interopRequireDefault(_input);
+	
+	var _controlComponent = __webpack_require__(160);
+	
+	var _controlComponent2 = _interopRequireDefault(_controlComponent);
+	
+	var _movementComponent = __webpack_require__(161);
+	
+	var _movementComponent2 = _interopRequireDefault(_movementComponent);
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+	
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+	
+	function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+	
+	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+	
+	var ControlSystem = function (_System) {
+	  _inherits(ControlSystem, _System);
+	
+	  function ControlSystem(entitySystem, input) {
+	    _classCallCheck(this, ControlSystem);
+	
+	    var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(ControlSystem).call(this));
+	
+	    _this._entitySystem = entitySystem;
+	    _this._input = input;
+	
+	    _this._input.addHotkey(_input2.default.charToKeyCode('W'), 'up');
+	    _this._input.addHotkey(_input2.default.CharCodes.Up, 'up');
+	    _this._input.addHotkey(_input2.default.charToKeyCode('D'), 'right');
+	    _this._input.addHotkey(_input2.default.CharCodes.Right, 'right');
+	    _this._input.addHotkey(_input2.default.charToKeyCode('S'), 'down');
+	    _this._input.addHotkey(_input2.default.CharCodes.Down, 'down');
+	    _this._input.addHotkey(_input2.default.charToKeyCode('A'), 'left');
+	    _this._input.addHotkey(_input2.default.CharCodes.Left, 'left');
+	    return _this;
+	  }
+	
+	  _createClass(ControlSystem, [{
+	    key: 'update',
+	    value: function update(dt) {
+	      var _this2 = this;
+	
+	      var set = this._entitySystem.getEntities(_controlComponent2.default.type);
+	
+	      set.each(function (entity) {
+	        var control = entity[_controlComponent2.default.type];
+	        var movement = entity[_movementComponent2.default.type];
+	        if (_this2._input.keysDown.up) {
+	          movement.speed.y = -control.velocity.y;
+	        }
+	        if (_this2._input.keysDown.right) {
+	          movement.speed.x = control.velocity.x;
+	        }
+	        if (_this2._input.keysDown.down) {
+	          movement.speed.y = control.velocity.y;
+	        }
+	        if (_this2._input.keysDown.left) {
+	          movement.speed.x = -control.velocity.x;
+	        }
+	      });
+	    }
+	  }]);
+	
+	  return ControlSystem;
+	}(_system2.default);
+	
+	exports.default = ControlSystem;
+
+/***/ },
+/* 160 */
+/***/ function(module, exports, __webpack_require__) {
+
+	"use strict";
+	
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	
+	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+	
+	var _component = __webpack_require__(154);
+	
+	var _component2 = _interopRequireDefault(_component);
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+	
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+	
+	function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+	
+	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+	
+	var ControlComponent = function (_Component) {
+	  _inherits(ControlComponent, _Component);
+	
+	  function ControlComponent(params) {
+	    _classCallCheck(this, ControlComponent);
+	
+	    /**
+	     * Velocity to set when moving.
+	     * @type {{x: Number, y: Number}}
+	     */
+	
+	    var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(ControlComponent).call(this));
+	
+	    _this.velocity = {
+	      x: 0,
+	      y: 0
+	    };
+	
+	    _this.setParams(params);
+	    return _this;
+	  }
+	
+	  _createClass(ControlComponent, [{
+	    key: 'setParams',
+	    value: function setParams(params) {
+	      this.merge(params);
+	    }
+	  }]);
+	
+	  return ControlComponent;
+	}(_component2.default);
+	
+	ControlComponent.type = 'ControlComponent';
+	
+	exports.default = ControlComponent;
+
+/***/ },
+/* 161 */
+/***/ function(module, exports, __webpack_require__) {
+
+	"use strict";
+	
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	
+	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+	
+	var _component = __webpack_require__(154);
+	
+	var _component2 = _interopRequireDefault(_component);
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+	
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+	
+	function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+	
+	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+	
+	var MovementComponent = function (_Component) {
+	  _inherits(MovementComponent, _Component);
+	
+	  function MovementComponent(params) {
+	    _classCallCheck(this, MovementComponent);
+	
+	    /**
+	     * Amount to move when the movement system is updated.
+	     * This value is usually calculated instead of set.
+	     * @type {{x: number, y: number}}
+	     */
+	
+	    var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(MovementComponent).call(this));
+	
+	    _this.move = { x: 0, y: 0 };
+	
+	    /**
+	     * Speed to move during an update.
+	     * @type {{x: number, y: number}}
+	     */
+	    _this.speed = { x: 0, y: 0 };
+	
+	    /**
+	     * Amount to damp the speed by per update.
+	     * @type {number}
+	     */
+	    _this.damping = 1.0;
+	
+	    /**
+	     * Absolute maximum movement speed.
+	     * A value of 0 signifies that it has no max.
+	     * @type {{x: number, y: number}}
+	     */
+	    _this.maxSpeed = { x: 0, y: 0 };
+	
+	    /**
+	     * Amount to rotate by per second in radians.
+	     * @type {number}
+	     */
+	    _this.angularSpeed = 0;
+	
+	    _this.setParams(params);
+	    return _this;
+	  }
+	
+	  _createClass(MovementComponent, [{
+	    key: 'setParams',
+	    value: function setParams(params) {
+	      if (params) {
+	        if (params.move) {
+	          this.move.x = _component2.default.copyField(params.move.x, this.move.x);
+	          this.move.y = _component2.default.copyField(params.move.y, this.move.y);
+	        }
+	        if (params.speed) {
+	          this.speed.x = _component2.default.copyField(params.speed.x, this.speed.x);
+	          this.speed.y = _component2.default.copyField(params.speed.y, this.speed.y);
+	        }
+	        this.damping = _component2.default.copyField(params.damping, this.damping);
+	        if (params.maxSpeed) {
+	          this.maxSpeed.x = _component2.default.copyField(params.maxSpeed.x, this.maxSpeed.x);
+	          this.maxSpeed.y = _component2.default.copyField(params.maxSpeed.y, this.maxSpeed.y);
+	        }
+	        this.angularSpeed = _component2.default.copyField(params.angularSpeed, this.angularSpeed);
+	      }
+	    }
+	  }]);
+	
+	  return MovementComponent;
+	}(_component2.default);
+	
+	MovementComponent.type = 'MovementComponent';
+	
+	exports.default = MovementComponent;
+
+/***/ },
+/* 162 */
+/***/ function(module, exports, __webpack_require__) {
+
+	"use strict";
+	
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	
+	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+	
+	var _system = __webpack_require__(152);
+	
+	var _system2 = _interopRequireDefault(_system);
+	
+	var _movementComponent = __webpack_require__(161);
+	
+	var _movementComponent2 = _interopRequireDefault(_movementComponent);
+	
+	var _spatialComponent = __webpack_require__(155);
+	
+	var _spatialComponent2 = _interopRequireDefault(_spatialComponent);
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+	
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+	
+	function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+	
+	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+	
+	var MovementSystem = function (_System) {
+	  _inherits(MovementSystem, _System);
+	
+	  function MovementSystem(entitySystem) {
+	    _classCallCheck(this, MovementSystem);
+	
+	    var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(MovementSystem).call(this));
+	
+	    _this._entitySystem = entitySystem;
+	    return _this;
+	  }
+	
+	  _createClass(MovementSystem, [{
+	    key: 'update',
+	    value: function update(dt) {
+	      var set = this._entitySystem.getEntities(_movementComponent2.default.type);
+	
+	      set.each(function (entity) {
+	        var spatial = entity[_spatialComponent2.default.type];
+	        if (!spatial) return;
+	        var movement = entity[_movementComponent2.default.type];
+	
+	        spatial.position.x += movement.speed.x * dt / 1000;
+	        spatial.position.y += movement.speed.y * dt / 1000;
+	
+	        movement.speed.x *= movement.damping;
+	        movement.speed.y *= movement.damping;
+	      });
+	    }
+	  }]);
+	
+	  return MovementSystem;
+	}(_system2.default);
+	
+	exports.default = MovementSystem;
+
+/***/ },
+/* 163 */
+/***/ function(module, exports, __webpack_require__) {
+
+	"use strict";
+	
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	
+	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+	
+	var _system = __webpack_require__(152);
+	
+	var _system2 = _interopRequireDefault(_system);
+	
+	var _spatialComponent = __webpack_require__(155);
+	
+	var _spatialComponent2 = _interopRequireDefault(_spatialComponent);
+	
+	var _gameObjectComponent = __webpack_require__(164);
+	
+	var _gameObjectComponent2 = _interopRequireDefault(_gameObjectComponent);
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+	
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+	
+	function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+	
+	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+	
+	var GameObjectSystem = function (_System) {
+	  _inherits(GameObjectSystem, _System);
+	
+	  function GameObjectSystem(entitySystem, bounds) {
+	    _classCallCheck(this, GameObjectSystem);
+	
+	    var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(GameObjectSystem).call(this));
+	
+	    _this._entitySystem = entitySystem;
+	    _this._bounds = bounds;
+	    return _this;
+	  }
+	
+	  _createClass(GameObjectSystem, [{
+	    key: 'update',
+	    value: function update(dt) {
+	      var _this2 = this;
+	
+	      var set = this._entitySystem.getEntities(_gameObjectComponent2.default.type);
+	
+	      set.each(function (entity) {
+	        var spatial = entity[_spatialComponent2.default.type];
+	        if (!spatial) return;
+	
+	        var component = entity[_gameObjectComponent2.default.type];
+	        if (component.isBound) {
+	          if (spatial.position.x < _this2._bounds.left) {
+	            spatial.position.x = _this2._bounds.left;
+	          }
+	          if (spatial.position.x > _this2._bounds.right) {
+	            spatial.position.x = _this2._bounds.right;
+	          }
+	          if (spatial.position.y < _this2._bounds.top) {
+	            spatial.position.y = _this2._bounds.top;
+	          }
+	          if (spatial.position.y > _this2._bounds.bottom) {
+	            spatial.position.y = _this2._bounds.bottom;
+	          }
+	        }
+	      });
+	    }
+	  }]);
+	
+	  return GameObjectSystem;
+	}(_system2.default);
+	
+	exports.default = GameObjectSystem;
+
+/***/ },
+/* 164 */
+/***/ function(module, exports, __webpack_require__) {
+
+	"use strict";
+	
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	
+	var _component = __webpack_require__(154);
+	
+	var _component2 = _interopRequireDefault(_component);
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+	
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+	
+	function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+	
+	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+	
+	var GameObjectComponent = function (_Component) {
+	  _inherits(GameObjectComponent, _Component);
+	
+	  function GameObjectComponent(params) {
+	    _classCallCheck(this, GameObjectComponent);
+	
+	    var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(GameObjectComponent).call(this));
+	
+	    _this.isRemovedOnBounds = false;
+	
+	    _this.isBound = false;
+	
+	    // this.setParams(params);
+	    return _this;
+	  }
+	
+	  return GameObjectComponent;
+	}(_component2.default);
+	
+	GameObjectComponent.type = 'GameObjectComponent';
+	
+	exports.default = GameObjectComponent;
 
 /***/ }
 /******/ ]);

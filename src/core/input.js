@@ -547,7 +547,7 @@ Input.P1PadCodes = {
   Start: padName + 9
 };
 
-module.exports.Input = Input;
+export default Input;
 module.exports.MouseButtons = Input.MouseButtons;
 module.exports.MouseCodes = Input.MouseCodes;
 module.exports.CharCodes = Input.CharCodes;

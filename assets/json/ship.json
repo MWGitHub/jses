@@ -1,5 +1,17 @@
 {
   "components": {
+    "ControlComponent": {
+      "velocity": {
+        "x": 250,
+        "y": 250
+      }
+    },
+    "GameObjectComponent": {
+      "isBound": true
+    },
+    "MovementComponent": {
+      "damping": 0.7
+    },
     "SpatialComponent": {},
     "ShapeComponent": {
 			"shapes": [
