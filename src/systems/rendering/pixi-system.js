@@ -25,7 +25,11 @@ function convertArguments(args) {
   return args.map(arg => {
     if (typeof arg === 'string') {
       if (arg[0] === '#') {
-        return parseInt('0x' + arg.slice(1));
+        if (arg === '#random') {
+          return Math.floor(Math.random() * 0xFFFFFF);
+        } else {
+          return parseInt('0x' + arg.slice(1));
+        }
       }
     }
     return arg;

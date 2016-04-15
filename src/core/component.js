@@ -5,7 +5,8 @@
  * Components do not have to extend this. They only need to implement
  * the class methods to be compatible with systems.
  */
-var Component = function () {};
+var Component = function () {
+};
 
 /**
  * Type of component which is used for component retrieval and setting.

@@ -2,7 +2,7 @@
 
 import Component from '../../core/component';
 
-class MovementComponent extends Component {
+class RigidBodyComponent extends Component {
   constructor(params) {
     super();
 
@@ -17,20 +17,13 @@ class MovementComponent extends Component {
      * Velocity of the object.
      * @type {{x: number, y: number}}
      */
-    this.velocity = {x: 0, y: 0};
+    this.linearVelocity = {x: 0, y: 0};
 
     /**
-     * Amount to damp the velocity by per update.
-     * @type {number}
-     */
-    this.damping = 1.0;
-
-    /**
-     * Absolute maximum movement velocity.
-     * A value of 0 signifies that it has no max.
+     * Damping on the object.
      * @type {{x: number, y: number}}
      */
-    this.maxVelocity = {x: 0, y: 0};
+    this.linearDamping = {x: 0, y: 0};
 
     /**
      * Amount to rotate by per second in radians.
@@ -47,19 +40,18 @@ class MovementComponent extends Component {
         this.move.x = Component.copyField(params.move.x, this.move.x);
         this.move.y = Component.copyField(params.move.y, this.move.y);
       }
-      if (params.velocity) {
-        this.velocity.x = Component.copyField(params.velocity.x, this.velocity.x);
-        this.velocity.y = Component.copyField(params.velocity.y, this.velocity.y);
+      if (params.linearVelocity) {
+        this.linearVelocity.x = Component.copyField(params.linearVelocity.x, this.linearVelocity.x);
+        this.linearVelocity.y = Component.copyField(params.linearVelocity.y, this.linearVelocity.y);
       }
-      this.damping = Component.copyField(params.damping, this.damping);
-      if (params.maxVelocity) {
-          this.maxVelocity.x = Component.copyField(params.maxVelocity.x, this.maxVelocity.x);
-          this.maxVelocity.y = Component.copyField(params.maxVelocity.y, this.maxVelocity.y);
+      if (params.linearDamping) {
+        this.linearDamping.x = Component.copyField(params.linearDamping.x, this.linearDamping.x);
+        this.linearDamping.y = Component.copyField(params.linearDamping.y, this.linearDamping.y);
       }
       this.angularSpeed = Component.copyField(params.angularSpeed, this.angularSpeed);
-  }
+    }
   }
 }
-MovementComponent.type = 'MovementComponent';
+RigidBodyComponent.type = 'RigidBodyComponent';
 
-export default MovementComponent;
+export default RigidBodyComponent;
