@@ -6,6 +6,14 @@ class CollisionShapesComponent extends Component {
   constructor(params) {
     super();
 
+    /**
+     * Array of shape objects in the forms of
+     * Circle: {
+     * 	type: "circle",
+     * 	radius: number
+     * }
+     * @type {Array}
+     */
     this.shapes = [];
 
     this.setParams(params);

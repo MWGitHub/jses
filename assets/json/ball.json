@@ -1,5 +1,13 @@
 {
   "components": {
+    "CollisionShapesComponent": {
+      "shapes": [
+        {
+          "type": "circle",
+          "radius": 15
+        }
+      ]
+    },
     "RigidBodyComponent": {
       "linearDamping": {
         "x": 0.01,

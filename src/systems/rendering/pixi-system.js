@@ -1,6 +1,6 @@
 "use strict";
 
-import { Graphics } from 'pixi.js';
+import { Sprite, Graphics } from 'pixi.js';
 import System from '../../core/system';
 import ShapeComponent from './shape-component';
 import SpatialComponent from '../spatial-component';
@@ -46,9 +46,16 @@ PIXISystem.prototype._createShape = function(entity, component) {
       let args = convertArguments(shapes[i].slice(1));
       Object.getPrototypeOf(graphics)[command].apply(graphics, args);
     }
-    this._layers[component.layer].addChild(graphics);
     this._entityGraphics[entity.id] = this._entityGraphics[entity.id] || [];
-    this._entityGraphics[entity.id].push(graphics);
+    if (component.isAntiAliased) {
+      let texture = graphics.generateTexture();
+      let sprite = new Sprite(texture);
+      this._layers[component.layer].addChild(sprite);
+      this._entityGraphics[entity.id].push(sprite);
+    } else {
+      this._layers[component.layer].addChild(graphics);
+      this._entityGraphics[entity.id].push(graphics);
+    }
   }
 };
 

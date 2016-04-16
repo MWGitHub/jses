@@ -31177,15 +31177,19 @@ var Game =
 	
 	var _pixiSystem2 = _interopRequireDefault(_pixiSystem);
 	
+	var _collisionShapeSystem = __webpack_require__(166);
+	
+	var _collisionShapeSystem2 = _interopRequireDefault(_collisionShapeSystem);
+	
 	var _controlSystem = __webpack_require__(156);
 	
 	var _controlSystem2 = _interopRequireDefault(_controlSystem);
 	
-	var _dynamicsSystem = __webpack_require__(165);
+	var _dynamicsSystem = __webpack_require__(159);
 	
 	var _dynamicsSystem2 = _interopRequireDefault(_dynamicsSystem);
 	
-	var _gameObjectSystem = __webpack_require__(160);
+	var _gameObjectSystem = __webpack_require__(161);
 	
 	var _gameObjectSystem2 = _interopRequireDefault(_gameObjectSystem);
 	
@@ -31201,27 +31205,23 @@ var Game =
 	
 	var _controlComponent2 = _interopRequireDefault(_controlComponent);
 	
-	var _rigidBodyComponent = __webpack_require__(166);
-	
-	var _rigidBodyComponent2 = _interopRequireDefault(_rigidBodyComponent);
-	
-	var _gameObjectComponent = __webpack_require__(161);
+	var _gameObjectComponent = __webpack_require__(162);
 	
 	var _gameObjectComponent2 = _interopRequireDefault(_gameObjectComponent);
 	
-	var _collisionShapesComponent = __webpack_require__(168);
+	var _rigidBodyComponent = __webpack_require__(160);
+	
+	var _rigidBodyComponent2 = _interopRequireDefault(_rigidBodyComponent);
+	
+	var _collisionShapesComponent = __webpack_require__(163);
 	
 	var _collisionShapesComponent2 = _interopRequireDefault(_collisionShapesComponent);
 	
-	var _objectCreator = __webpack_require__(162);
+	var _objectCreator = __webpack_require__(164);
 	
 	var _objectCreator2 = _interopRequireDefault(_objectCreator);
 	
-	var _ship = __webpack_require__(163);
-	
-	var _ship2 = _interopRequireDefault(_ship);
-	
-	var _ball = __webpack_require__(164);
+	var _ball = __webpack_require__(165);
 	
 	var _ball2 = _interopRequireDefault(_ball);
 	
@@ -31246,7 +31246,7 @@ var Game =
 	
 	  // Create the entity system and systems
 	  this._entitySystem = new _entitySystem2.default();
-	  this._systems = [new _controlSystem2.default(this._entitySystem, input), new _dynamicsSystem2.default(this._entitySystem), new _gameObjectSystem2.default(this._entitySystem, {
+	  this._systems = [new _collisionShapeSystem2.default(this._entitySystem), new _controlSystem2.default(this._entitySystem, input), new _dynamicsSystem2.default(this._entitySystem), new _gameObjectSystem2.default(this._entitySystem, {
 	    top: 0,
 	    right: this._viewport.width,
 	    bottom: this._viewport.height,
@@ -31264,7 +31264,6 @@ var Game =
 	  this._objectCreator.addComponent(_rigidBodyComponent2.default.type, _rigidBodyComponent2.default);
 	  this._objectCreator.addComponent(_gameObjectComponent2.default.type, _gameObjectComponent2.default);
 	  this._objectCreator.addComponent(_collisionShapesComponent2.default.type, _collisionShapesComponent2.default);
-	  this._objectCreator.storeBlueprint('ship', _ship2.default);
 	  this._objectCreator.storeBlueprint('ball', _ball2.default);
 	}
 	GameState.prototype = Object.create(_state2.default.prototype);
@@ -31283,6 +31282,16 @@ var Game =
 	  spatial.position.y = this._viewport.height / 2 - 100;
 	  body = entity[_rigidBodyComponent2.default.type];
 	  body.linearVelocity.y = 200;
+	
+	  // for (let i = 0; i < 10000; i++) {
+	  //   entity = this._objectCreator.createFromBlueprint('ball');
+	  //   spatial = entity[SpatialComponent.type];
+	  //   spatial.position.x = Math.random() * this._viewport.width;
+	  //   spatial.position.y = Math.random() * this._viewport.height;
+	  //   body = entity[RigidBodyComponent.type];
+	  //   body.linearVelocity.y = Math.random() * 200;
+	  //   body.linearVelocity.x = Math.random() * 200;
+	  // }
 	};
 	
 	GameState.prototype.update = function (dt) {
@@ -32120,7 +32129,7 @@ var Game =
 	"use strict";
 	
 	Object.defineProperty(exports, "__esModule", {
-			value: true
+	  value: true
 	});
 	
 	var _pixi = __webpack_require__(7);
@@ -32145,88 +32154,95 @@ var Game =
 	 * @param {Dictionary} layers the layers to add to.
 	 */
 	var PIXISystem = function PIXISystem(entitySystem, layers) {
-			_system2.default.call(this);
+	  _system2.default.call(this);
 	
-			this._entitySystem = entitySystem;
-			this._layers = layers;
+	  this._entitySystem = entitySystem;
+	  this._layers = layers;
 	
-			// Object with entity id as the key and an array of graphics.
-			this._entityGraphics = {};
+	  // Object with entity id as the key and an array of graphics.
+	  this._entityGraphics = {};
 	};
 	PIXISystem.prototype = Object.create(_system2.default.prototype);
 	
 	function convertArguments(args) {
-			return args.map(function (arg) {
-					if (typeof arg === 'string') {
-							if (arg[0] === '#') {
-									if (arg === '#random') {
-											return Math.floor(Math.random() * 0xFFFFFF);
-									} else {
-											return parseInt('0x' + arg.slice(1));
-									}
-							}
-					}
-					return arg;
-			});
+	  return args.map(function (arg) {
+	    if (typeof arg === 'string') {
+	      if (arg[0] === '#') {
+	        if (arg === '#random') {
+	          return Math.floor(Math.random() * 0xFFFFFF);
+	        } else {
+	          return parseInt('0x' + arg.slice(1));
+	        }
+	      }
+	    }
+	    return arg;
+	  });
 	}
 	
 	PIXISystem.prototype._createShape = function (entity, component) {
-			// Create shape if provided
-			var shapes = component.shapes;
-			if (shapes.length > 0) {
-					var graphics = new _pixi.Graphics();
-					for (var i = 0; i < shapes.length; i++) {
-							var command = shapes[i][0];
-							var args = convertArguments(shapes[i].slice(1));
-							Object.getPrototypeOf(graphics)[command].apply(graphics, args);
-					}
-					this._layers[component.layer].addChild(graphics);
-					this._entityGraphics[entity.id] = this._entityGraphics[entity.id] || [];
-					this._entityGraphics[entity.id].push(graphics);
-			}
+	  // Create shape if provided
+	  var shapes = component.shapes;
+	  if (shapes.length > 0) {
+	    var graphics = new _pixi.Graphics();
+	    for (var i = 0; i < shapes.length; i++) {
+	      var command = shapes[i][0];
+	      var args = convertArguments(shapes[i].slice(1));
+	      Object.getPrototypeOf(graphics)[command].apply(graphics, args);
+	    }
+	    this._entityGraphics[entity.id] = this._entityGraphics[entity.id] || [];
+	    if (component.isAntiAliased) {
+	      var texture = graphics.generateTexture();
+	      var sprite = new _pixi.Sprite(texture);
+	      this._layers[component.layer].addChild(sprite);
+	      this._entityGraphics[entity.id].push(sprite);
+	    } else {
+	      this._layers[component.layer].addChild(graphics);
+	      this._entityGraphics[entity.id].push(graphics);
+	    }
+	  }
 	};
 	
 	PIXISystem.prototype.update = function (dt) {
-			var _this = this;
+	  var _this = this;
 	
-			var entitySet = this._entitySystem.getEntities(_shapeComponent2.default.type);
+	  var entitySet = this._entitySystem.getEntities(_shapeComponent2.default.type);
 	
-			// Create component
-			entitySet.eachAdded(function (entity) {
-					var shapeComponent = _this._entitySystem.getComponent(entity, _shapeComponent2.default.type);
-					if (shapeComponent) {
-							_this._createShape(entity, shapeComponent);
-					}
-			});
+	  // Create component
+	  entitySet.eachAdded(function (entity) {
+	    var shapeComponent = _this._entitySystem.getComponent(entity, _shapeComponent2.default.type);
+	    if (shapeComponent) {
+	      _this._createShape(entity, shapeComponent);
+	    }
+	  });
 	
-			// Update all components
-			entitySet.each(function (entity) {
-					var shapeComponent = _this._entitySystem.getComponent(entity, _shapeComponent2.default.type);
-					var spatial = _this._entitySystem.getComponent(entity, _spatialComponent2.default.type);
-					var graphicsArray = _this._entityGraphics[entity.id];
-					if (spatial) {
-							for (var i = 0; i < graphicsArray.length; i++) {
-									var graphics = graphicsArray[i];
-									graphics.x = spatial.position.x;
-									graphics.y = spatial.position.y;
-									graphics.scale.x = spatial.scale.x;
-									graphics.scale.y = spatial.scale.y;
-									graphics.rotation = spatial.rotation;
-							}
-					}
-			});
+	  // Update all components
+	  entitySet.each(function (entity) {
+	    var shapeComponent = _this._entitySystem.getComponent(entity, _shapeComponent2.default.type);
+	    var spatial = _this._entitySystem.getComponent(entity, _spatialComponent2.default.type);
+	    var graphicsArray = _this._entityGraphics[entity.id];
+	    if (spatial) {
+	      for (var i = 0; i < graphicsArray.length; i++) {
+	        var graphics = graphicsArray[i];
+	        graphics.x = spatial.position.x;
+	        graphics.y = spatial.position.y;
+	        graphics.scale.x = spatial.scale.x;
+	        graphics.scale.y = spatial.scale.y;
+	        graphics.rotation = spatial.rotation;
+	      }
+	    }
+	  });
 	
-			// Remove deleted components
-			entitySet.eachRemoved(function (entity) {
-					var graphicsArray = _this._entityGraphics[entity.id];
-					for (var i = 0; i < graphicsArray.length; i++) {
-							var graphics = graphicsArray[i];
-							var parent = graphics.parent;
-							if (parent) {
-									parent.removeChild(graphics);
-							}
-					}
-			});
+	  // Remove deleted components
+	  entitySet.eachRemoved(function (entity) {
+	    var graphicsArray = _this._entityGraphics[entity.id];
+	    for (var i = 0; i < graphicsArray.length; i++) {
+	      var graphics = graphicsArray[i];
+	      var parent = graphics.parent;
+	      if (parent) {
+	        parent.removeChild(graphics);
+	      }
+	    }
+	  });
 	};
 	
 	exports.default = PIXISystem;
@@ -32274,7 +32290,7 @@ var Game =
 	"use strict";
 	
 	Object.defineProperty(exports, "__esModule", {
-		value: true
+	  value: true
 	});
 	
 	var _component = __webpack_require__(154);
@@ -32288,25 +32304,32 @@ var Game =
 	 * @constructor
 	 */
 	function ShapeComponent(params) {
-		_component2.default.call(this);
+	  _component2.default.call(this);
 	
-		this.layer = null;
+	  this.layer = null;
 	
-		/**
-	  * Shapes commands given in order for drawing.
-	  * Arguments for the drawing command is passed in as an array.
-	  * @type {[[*]]}
-	  */
-		this.shapes = [];
+	  /**
+	   * Shapes commands given in order for drawing.
+	   * Arguments for the drawing command is passed in as an array.
+	   * @type {[[*]]}
+	   */
+	  this.shapes = [];
 	
-		this.setParams(params);
+	  /**
+	   * Set to true to anti alias the shapes.
+	   * @type {Boolean}
+	   */
+	  this.isAntiAliased = true;
+	
+	  this.setParams(params);
 	}
 	ShapeComponent.prototype = Object.create(_component2.default.prototype);
 	ShapeComponent.type = 'ShapeComponent';
 	
 	ShapeComponent.prototype.setParams = function (params) {
-		this.layer = _component2.default.copyField(params.layer, this.layer);
-		this.shapes = JSON.parse(JSON.stringify(params.shapes)) || [];
+	  this.layer = _component2.default.copyField(params.layer, this.layer);
+	  this.shapes = JSON.parse(JSON.stringify(params.shapes)) || [];
+	  this.isAntiAliased = _component2.default.copyField(params.isAntiAliased, this.isAntiAliased);
 	};
 	
 	exports.default = ShapeComponent;
@@ -32699,8 +32722,165 @@ var Game =
 	exports.default = MovementComponent;
 
 /***/ },
-/* 159 */,
+/* 159 */
+/***/ function(module, exports, __webpack_require__) {
+
+	"use strict";
+	
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	
+	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+	
+	var _system = __webpack_require__(152);
+	
+	var _system2 = _interopRequireDefault(_system);
+	
+	var _rigidBodyComponent = __webpack_require__(160);
+	
+	var _rigidBodyComponent2 = _interopRequireDefault(_rigidBodyComponent);
+	
+	var _spatialComponent = __webpack_require__(155);
+	
+	var _spatialComponent2 = _interopRequireDefault(_spatialComponent);
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+	
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+	
+	function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+	
+	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+	
+	var DynamicsSystem = function (_System) {
+	  _inherits(DynamicsSystem, _System);
+	
+	  function DynamicsSystem(entitySystem) {
+	    _classCallCheck(this, DynamicsSystem);
+	
+	    var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(DynamicsSystem).call(this));
+	
+	    _this._entitySystem = entitySystem;
+	    return _this;
+	  }
+	
+	  _createClass(DynamicsSystem, [{
+	    key: 'update',
+	    value: function update(dt) {
+	      var set = this._entitySystem.getEntities(_rigidBodyComponent2.default.type);
+	
+	      set.each(function (entity) {
+	        var spatial = entity[_spatialComponent2.default.type];
+	        if (!spatial) return;
+	        var rigidBody = entity[_rigidBodyComponent2.default.type];
+	
+	        spatial.position.x += rigidBody.linearVelocity.x * dt / 1000;
+	        spatial.position.y += rigidBody.linearVelocity.y * dt / 1000;
+	
+	        rigidBody.linearVelocity.x *= 1 - rigidBody.linearDamping.x;
+	        rigidBody.linearVelocity.y *= 1 - rigidBody.linearDamping.y;
+	      });
+	    }
+	  }]);
+	
+	  return DynamicsSystem;
+	}(_system2.default);
+	
+	exports.default = DynamicsSystem;
+
+/***/ },
 /* 160 */
+/***/ function(module, exports, __webpack_require__) {
+
+	"use strict";
+	
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	
+	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+	
+	var _component = __webpack_require__(154);
+	
+	var _component2 = _interopRequireDefault(_component);
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+	
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+	
+	function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+	
+	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+	
+	var RigidBodyComponent = function (_Component) {
+	  _inherits(RigidBodyComponent, _Component);
+	
+	  function RigidBodyComponent(params) {
+	    _classCallCheck(this, RigidBodyComponent);
+	
+	    /**
+	     * Amount to move when the movement system is updated.
+	     * This value is usually calculated instead of set.
+	     * @type {{x: number, y: number}}
+	     */
+	
+	    var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(RigidBodyComponent).call(this));
+	
+	    _this.move = { x: 0, y: 0 };
+	
+	    /**
+	     * Velocity of the object.
+	     * @type {{x: number, y: number}}
+	     */
+	    _this.linearVelocity = { x: 0, y: 0 };
+	
+	    /**
+	     * Damping on the object.
+	     * @type {{x: number, y: number}}
+	     */
+	    _this.linearDamping = { x: 0, y: 0 };
+	
+	    /**
+	     * Amount to rotate by per second in radians.
+	     * @type {number}
+	     */
+	    _this.angularSpeed = 0;
+	
+	    _this.setParams(params);
+	    return _this;
+	  }
+	
+	  _createClass(RigidBodyComponent, [{
+	    key: 'setParams',
+	    value: function setParams(params) {
+	      if (params) {
+	        if (params.move) {
+	          this.move.x = _component2.default.copyField(params.move.x, this.move.x);
+	          this.move.y = _component2.default.copyField(params.move.y, this.move.y);
+	        }
+	        if (params.linearVelocity) {
+	          this.linearVelocity.x = _component2.default.copyField(params.linearVelocity.x, this.linearVelocity.x);
+	          this.linearVelocity.y = _component2.default.copyField(params.linearVelocity.y, this.linearVelocity.y);
+	        }
+	        if (params.linearDamping) {
+	          this.linearDamping.x = _component2.default.copyField(params.linearDamping.x, this.linearDamping.x);
+	          this.linearDamping.y = _component2.default.copyField(params.linearDamping.y, this.linearDamping.y);
+	        }
+	        this.angularSpeed = _component2.default.copyField(params.angularSpeed, this.angularSpeed);
+	      }
+	    }
+	  }]);
+	
+	  return RigidBodyComponent;
+	}(_component2.default);
+	
+	RigidBodyComponent.type = 'RigidBodyComponent';
+	
+	exports.default = RigidBodyComponent;
+
+/***/ },
+/* 161 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
@@ -32719,7 +32899,7 @@ var Game =
 	
 	var _spatialComponent2 = _interopRequireDefault(_spatialComponent);
 	
-	var _gameObjectComponent = __webpack_require__(161);
+	var _gameObjectComponent = __webpack_require__(162);
 	
 	var _gameObjectComponent2 = _interopRequireDefault(_gameObjectComponent);
 	
@@ -32780,7 +32960,7 @@ var Game =
 	exports.default = GameObjectSystem;
 
 /***/ },
-/* 161 */
+/* 162 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
@@ -32825,7 +33005,81 @@ var Game =
 	exports.default = GameObjectComponent;
 
 /***/ },
-/* 162 */
+/* 163 */
+/***/ function(module, exports, __webpack_require__) {
+
+	"use strict";
+	
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	
+	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+	
+	var _component = __webpack_require__(154);
+	
+	var _component2 = _interopRequireDefault(_component);
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+	
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+	
+	function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+	
+	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+	
+	var CollisionShapesComponent = function (_Component) {
+	  _inherits(CollisionShapesComponent, _Component);
+	
+	  function CollisionShapesComponent(params) {
+	    _classCallCheck(this, CollisionShapesComponent);
+	
+	    /**
+	     * Array of shape objects in the forms of
+	     * Circle: {
+	     * 	type: "circle",
+	     * 	radius: number
+	     * }
+	     * @type {Array}
+	     */
+	
+	    var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(CollisionShapesComponent).call(this));
+	
+	    _this.shapes = [];
+	
+	    _this.setParams(params);
+	    return _this;
+	  }
+	
+	  _createClass(CollisionShapesComponent, [{
+	    key: 'setParams',
+	    value: function setParams(params) {
+	      if (params) {
+	        if (params.shapes) {
+	          var shapes = [];
+	          for (var i = 0; i < params.shapes.length; ++i) {
+	            var shape = params.shapes[i];
+	            var shapeData = {};
+	            for (var key in shape) {
+	              if (!shape.hasOwnProperty(key)) continue;
+	              shapeData[key] = shape[key];
+	            }
+	            shapes.push(shapeData);
+	          }
+	        }
+	      }
+	    }
+	  }]);
+	
+	  return CollisionShapesComponent;
+	}(_component2.default);
+	
+	CollisionShapesComponent.type = 'CollisionShapesComponent';
+	
+	exports.default = CollisionShapesComponent;
+
+/***/ },
+/* 164 */
 /***/ function(module, exports) {
 
 	"use strict";
@@ -32987,61 +33241,19 @@ var Game =
 	exports.default = ObjectCreator;
 
 /***/ },
-/* 163 */
+/* 165 */
 /***/ function(module, exports) {
 
 	module.exports = {
 		"components": {
-			"ControlComponent": {
-				"velocity": {
-					"x": 250,
-					"y": 250
-				}
-			},
-			"GameObjectComponent": {
-				"isBound": true
-			},
-			"MovementComponent": {
-				"damping": 0.7
-			},
-			"SpatialComponent": {},
-			"ShapeComponent": {
+			"CollisionShapesComponent": {
 				"shapes": [
-					[
-						"beginFill",
-						"#24ff00",
-						0.7
-					],
-					[
-						"moveTo",
-						0,
-						0
-					],
-					[
-						"lineTo",
-						-10,
-						20
-					],
-					[
-						"lineTo",
-						10,
-						20
-					],
-					[
-						"endFill"
-					]
-				],
-				"layer": "main"
-			}
-		}
-	};
-
-/***/ },
-/* 164 */
-/***/ function(module, exports) {
-
-	module.exports = {
-		"components": {
+					{
+						"type": "circle",
+						"radius": 15
+					}
+				]
+			},
 			"RigidBodyComponent": {
 				"linearDamping": {
 					"x": 0.01,
@@ -33072,7 +33284,7 @@ var Game =
 	};
 
 /***/ },
-/* 165 */
+/* 166 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
@@ -33087,13 +33299,13 @@ var Game =
 	
 	var _system2 = _interopRequireDefault(_system);
 	
-	var _rigidBodyComponent = __webpack_require__(166);
+	var _collisionShapesComponent = __webpack_require__(163);
 	
-	var _rigidBodyComponent2 = _interopRequireDefault(_rigidBodyComponent);
+	var _collisionShapesComponent2 = _interopRequireDefault(_collisionShapesComponent);
 	
-	var _spatialComponent = __webpack_require__(155);
+	var _circle = __webpack_require__(167);
 	
-	var _spatialComponent2 = _interopRequireDefault(_spatialComponent);
+	var _circle2 = _interopRequireDefault(_circle);
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
@@ -33103,57 +33315,68 @@ var Game =
 	
 	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 	
-	var DynamicsSystem = function (_System) {
-	  _inherits(DynamicsSystem, _System);
+	var CollisionShapeSystem = function (_System) {
+	  _inherits(CollisionShapeSystem, _System);
 	
-	  function DynamicsSystem(entitySystem) {
-	    _classCallCheck(this, DynamicsSystem);
+	  function CollisionShapeSystem(entitySystem) {
+	    _classCallCheck(this, CollisionShapeSystem);
 	
-	    var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(DynamicsSystem).call(this));
+	    var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(CollisionShapeSystem).call(this));
 	
 	    _this._entitySystem = entitySystem;
+	
+	    _this._entityShapes = {};
 	    return _this;
 	  }
 	
-	  _createClass(DynamicsSystem, [{
+	  _createClass(CollisionShapeSystem, [{
+	    key: '_addEntity',
+	    value: function _addEntity(entity, component) {
+	      var shapesComponent = entity[_collisionShapesComponent2.default.type];
+	      var shapes = shapesComponent.shapes;
+	      for (var i = 0; i < shapes.length; ++i) {
+	        var shapeData = shapes[i];
+	        var shape = null;
+	        switch (shapeData.type) {
+	          case 'circle':
+	            shape = new _circle2.default({
+	              radius: shapeData.radius
+	            });
+	            break;
+	        }
+	        this._entityShapes[entity.id] = this._entityShapes[entity.id] || [];
+	        if (shape) {
+	          this._entityShapes[entity.id].push(shape);
+	        }
+	      }
+	    }
+	  }, {
 	    key: 'update',
 	    value: function update(dt) {
-	      var set = this._entitySystem.getEntities(_rigidBodyComponent2.default.type);
+	      var set = this._entitySystem.getEntities(_collisionShapesComponent2.default.type);
 	
-	      set.each(function (entity) {
-	        var spatial = entity[_spatialComponent2.default.type];
-	        if (!spatial) return;
-	        var rigidBody = entity[_rigidBodyComponent2.default.type];
-	
-	        spatial.position.x += rigidBody.linearVelocity.x * dt / 1000;
-	        spatial.position.y += rigidBody.linearVelocity.y * dt / 1000;
-	
-	        rigidBody.linearVelocity.x *= 1 - rigidBody.linearDamping.x;
-	        rigidBody.linearVelocity.y *= 1 - rigidBody.linearDamping.y;
-	      });
+	      set.eachAdded(this._addEntity.bind(this));
 	    }
 	  }]);
 	
-	  return DynamicsSystem;
+	  return CollisionShapeSystem;
 	}(_system2.default);
 	
-	exports.default = DynamicsSystem;
+	exports.default = CollisionShapeSystem;
 
 /***/ },
-/* 166 */
+/* 167 */
 /***/ function(module, exports, __webpack_require__) {
 
-	"use strict";
+	'use strict';
 	
 	Object.defineProperty(exports, "__esModule", {
 	  value: true
 	});
 	
-	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+	var _geometry = __webpack_require__(168);
 	
-	var _component = __webpack_require__(154);
-	
-	var _component2 = _interopRequireDefault(_component);
+	var _geometry2 = _interopRequireDefault(_geometry);
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
@@ -33163,76 +33386,26 @@ var Game =
 	
 	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 	
-	var RigidBodyComponent = function (_Component) {
-	  _inherits(RigidBodyComponent, _Component);
+	var Circle = function (_Geometry) {
+	  _inherits(Circle, _Geometry);
 	
-	  function RigidBodyComponent(params) {
-	    _classCallCheck(this, RigidBodyComponent);
+	  function Circle(options) {
+	    _classCallCheck(this, Circle);
 	
-	    /**
-	     * Amount to move when the movement system is updated.
-	     * This value is usually calculated instead of set.
-	     * @type {{x: number, y: number}}
-	     */
+	    var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(Circle).call(this, options));
 	
-	    var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(RigidBodyComponent).call(this));
-	
-	    _this.move = { x: 0, y: 0 };
-	
-	    /**
-	     * Velocity of the object.
-	     * @type {{x: number, y: number}}
-	     */
-	    _this.linearVelocity = { x: 0, y: 0 };
-	
-	    /**
-	     * Damping on the object.
-	     * @type {{x: number, y: number}}
-	     */
-	    _this.linearDamping = { x: 0, y: 0 };
-	
-	    /**
-	     * Amount to rotate by per second in radians.
-	     * @type {number}
-	     */
-	    _this.angularSpeed = 0;
-	
-	    _this.setParams(params);
+	    _this.radius = options.radius || 1.0;
 	    return _this;
 	  }
 	
-	  _createClass(RigidBodyComponent, [{
-	    key: 'setParams',
-	    value: function setParams(params) {
-	      if (params) {
-	        if (params.move) {
-	          this.move.x = _component2.default.copyField(params.move.x, this.move.x);
-	          this.move.y = _component2.default.copyField(params.move.y, this.move.y);
-	        }
-	        if (params.linearVelocity) {
-	          this.linearVelocity.x = _component2.default.copyField(params.linearVelocity.x, this.linearVelocity.x);
-	          this.linearVelocity.y = _component2.default.copyField(params.linearVelocity.y, this.linearVelocity.y);
-	        }
-	        if (params.linearDamping) {
-	          this.linearDamping.x = _component2.default.copyField(params.linearDamping.x, this.linearDamping.x);
-	          this.linearDamping.y = _component2.default.copyField(params.linearDamping.y, this.linearDamping.y);
-	        }
-	        this.angularSpeed = _component2.default.copyField(params.angularSpeed, this.angularSpeed);
-	      }
-	    }
-	  }]);
+	  return Circle;
+	}(_geometry2.default);
 	
-	  return RigidBodyComponent;
-	}(_component2.default);
-	
-	RigidBodyComponent.type = 'RigidBodyComponent';
-	
-	exports.default = RigidBodyComponent;
+	exports.default = Circle;
 
 /***/ },
-/* 167 */,
 /* 168 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ function(module, exports) {
 
 	"use strict";
 	
@@ -33240,60 +33413,13 @@ var Game =
 	  value: true
 	});
 	
-	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-	
-	var _component = __webpack_require__(154);
-	
-	var _component2 = _interopRequireDefault(_component);
-	
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-	
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 	
-	function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+	var Geometry = function Geometry() {
+	  _classCallCheck(this, Geometry);
+	};
 	
-	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
-	
-	var CollisionShapesComponent = function (_Component) {
-	  _inherits(CollisionShapesComponent, _Component);
-	
-	  function CollisionShapesComponent(params) {
-	    _classCallCheck(this, CollisionShapesComponent);
-	
-	    var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(CollisionShapesComponent).call(this));
-	
-	    _this.shapes = [];
-	
-	    _this.setParams(params);
-	    return _this;
-	  }
-	
-	  _createClass(CollisionShapesComponent, [{
-	    key: 'setParams',
-	    value: function setParams(params) {
-	      if (params) {
-	        if (params.shapes) {
-	          var shapes = [];
-	          for (var i = 0; i < params.shapes.length; ++i) {
-	            var shape = params.shapes[i];
-	            var shapeData = {};
-	            for (var key in shape) {
-	              if (!shape.hasOwnProperty(key)) continue;
-	              shapeData[key] = shape[key];
-	            }
-	            shapes.push(shapeData);
-	          }
-	        }
-	      }
-	    }
-	  }]);
-	
-	  return CollisionShapesComponent;
-	}(_component2.default);
-	
-	CollisionShapesComponent.type = 'CollisionShapesComponent';
-	
-	exports.default = CollisionShapesComponent;
+	exports.default = Geometry;
 
 /***/ }
 /******/ ]);
