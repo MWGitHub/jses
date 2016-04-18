@@ -33248,6 +33248,10 @@ var Game =
 	
 	var _world2 = _interopRequireDefault(_world);
 	
+	var _rigidBody = __webpack_require__(172);
+	
+	var _rigidBody2 = _interopRequireDefault(_rigidBody);
+	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 	
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -33272,15 +33276,28 @@ var Game =
 	
 	    _this._entitySystem = entitySystem;
 	
-	    _this._entityShapes = {};
+	    _this._entityBodies = {};
 	
 	    _this._world = world || new _world2.default();
 	    return _this;
 	  }
 	
 	  _createClass(PhysicsSystem, [{
-	    key: '_addShapes',
-	    value: function _addShapes(entity, component) {
+	    key: '_addBody',
+	    value: function _addBody(entity) {
+	      var bodyComponent = entity[_rigidBodyComponent2.default.type];
+	      if (!bodyComponent) return;
+	      var rigidBody = new _rigidBody2.default({
+	        bodyComponent: bodyComponent
+	      });
+	      this._addShape(entity, rigidBody);
+	      this._entityBodies[entity.id] = this._entityBodies[entity.id] || [];
+	      this._entityBodies[entity.id].push(rigidBody);
+	      this._world.add(bodyComponent);
+	    }
+	  }, {
+	    key: '_addShape',
+	    value: function _addShape(entity, body) {
 	      var shapesComponent = entity[_collisionShapesComponent2.default.type];
 	      var shapes = shapesComponent.shapes;
 	      for (var i = 0; i < shapes.length; ++i) {
@@ -33293,21 +33310,16 @@ var Game =
 	            });
 	            break;
 	        }
-	        this._entityShapes[entity.id] = this._entityShapes[entity.id] || [];
-	        if (shape) {
-	          this._entityShapes[entity.id].push(shape);
-	        }
+	        body.geometry = shape;
 	      }
 	    }
 	  }, {
 	    key: 'update',
 	    value: function update(dt) {
-	      var set = this._entitySystem.getEntities(_collisionShapesComponent2.default.type);
-	      set.eachAdded(this._addShapes.bind(this));
+	      var set = this._entitySystem.getEntities(_rigidBodyComponent2.default.type);
+	      set.eachAdded(this._addBody.bind(this));
 	
-	      this._world.update(dt);
-	
-	      set = this._entitySystem.getEntities(_rigidBodyComponent2.default.type);
+	      this._world.step(dt);
 	
 	      set.each(function (entity) {
 	        var spatial = entity[_spatialComponent2.default.type];
@@ -33352,14 +33364,50 @@ var Game =
 	  _createClass(World, [{
 	    key: "add",
 	    value: function add(body) {
+	      if (this._bodies.indexOf(body) !== -1) return;
+	
 	      this._bodies.push(body);
 	    }
+	  }, {
+	    key: "remove",
+	    value: function remove(body) {
+	      var index = this._bodies.indexOf(body);
+	      if (index >= 0) {
+	        this._bodies.splice(index, 1);
+	      }
+	    }
+	  }, {
+	    key: "step",
+	    value: function step(dt) {}
 	  }]);
 	
 	  return World;
 	}();
 	
 	exports.default = World;
+
+/***/ },
+/* 172 */
+/***/ function(module, exports) {
+
+	"use strict";
+	
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+	
+	var RigidBody = function RigidBody() {
+	  var options = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
+	
+	  _classCallCheck(this, RigidBody);
+	
+	  this.bodyComponent = options.bodyComponent || {};
+	  this.geometry = options.geometry;
+	};
+	
+	exports.default = RigidBody;
 
 /***/ }
 /******/ ]);

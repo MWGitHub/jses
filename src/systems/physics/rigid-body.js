@@ -1,8 +1,9 @@
 "use strict"
 
 class RigidBody {
-  constructor(options) {
-
+  constructor(options = {}) {
+    this.bodyComponent = options.bodyComponent || {};
+    this.geometry = options.geometry;
   }
 }
 

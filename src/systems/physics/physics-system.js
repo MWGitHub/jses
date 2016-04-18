@@ -5,6 +5,7 @@ import CollisionShapesComponent from './collision-shapes-component';
 import RigidBodyComponent from './rigid-body-component';
 import SpatialComponent from '../spatial-component';
 import World from './world';
+import RigidBody from './rigid-body';
 
 class PhysicsSystem extends System {
   /**
@@ -17,12 +18,24 @@ class PhysicsSystem extends System {
 
     this._entitySystem = entitySystem;
 
-    this._entityShapes = {};
+    this._entityBodies = {};
 
     this._world = world || new World();
   }
 
-  _addShapes(entity, component) {
+  _addBody(entity) {
+    let bodyComponent = entity[RigidBodyComponent.type];
+    if (!bodyComponent) return;
+    let rigidBody = new RigidBody({
+      bodyComponent: bodyComponent
+    });
+    this._addShape(entity, rigidBody);
+    this._entityBodies[entity.id] = this._entityBodies[entity.id] || [];
+    this._entityBodies[entity.id].push(rigidBody);
+    this._world.add(bodyComponent);
+  }
+
+  _addShape(entity, body) {
     let shapesComponent = entity[CollisionShapesComponent.type];
     let shapes = shapesComponent.shapes;
     for (let i = 0; i < shapes.length; ++i) {
@@ -35,22 +48,15 @@ class PhysicsSystem extends System {
           });
           break;
       }
-      this._entityShapes[entity.id] = this._entityShapes[entity.id] || [];
-      if (shape) {
-        this._entityShapes[entity.id].push(shape);
-      }
+      body.geometry = shape;
     }
   }
 
-
   update(dt) {
-    let set = this._entitySystem.getEntities(CollisionShapesComponent.type);
-    set.eachAdded(this._addShapes.bind(this));
+    let set = this._entitySystem.getEntities(RigidBodyComponent.type);
+    set.eachAdded(this._addBody.bind(this));
 
-    this._world.update(dt);
-
-    set = this._entitySystem.getEntities(RigidBodyComponent.type);
-
+    this._world.step(dt);
 
     set.each(entity => {
       let spatial = entity[SpatialComponent.type];
