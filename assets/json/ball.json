@@ -1,0 +1,30 @@
+{
+  "components": {
+    "CollisionShapesComponent": {
+      "shapes": [
+        {
+          "type": "circle",
+          "radius": 15
+        }
+      ]
+    },
+    "GameObjectComponent": {
+      "isBound": true
+    },
+    "RigidBodyComponent": {
+      "linearDamping": {
+        "x": 0.01,
+        "y": 0.01
+      }
+    },
+    "SpatialComponent": {},
+    "ShapeComponent": {
+			"shapes": [
+				["beginFill", "#random", 0.9],
+        ["drawCircle", 0, 0, 15],
+        ["endFill"]
+			],
+      "layer": "main"
+    }
+  }
+}

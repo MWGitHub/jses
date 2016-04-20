@@ -1,0 +1,27 @@
+{
+  "components": {
+    "ControlComponent": {
+      "velocity": {
+        "x": 250,
+        "y": 250
+      }
+    },
+    "GameObjectComponent": {
+      "isBound": true
+    },
+    "MovementComponent": {
+      "damping": 0.7
+    },
+    "SpatialComponent": {},
+    "ShapeComponent": {
+			"shapes": [
+				["beginFill", "#24ff00", 0.7],
+        ["moveTo", 0, 0],
+        ["lineTo", -10, 20],
+        ["lineTo", 10, 20],
+        ["endFill"]
+			],
+      "layer": "main"
+    }
+  }
+}

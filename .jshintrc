@@ -1,0 +1,10 @@
+{
+  "browser": true,
+  "node": true,
+  "globalstrict": true,
+  "esnext": 6,
+  "moz": false,
+  "globals": {
+    "PIXI": true
+  }
+}
