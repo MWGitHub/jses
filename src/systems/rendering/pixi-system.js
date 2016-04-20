@@ -50,6 +50,8 @@ PIXISystem.prototype._createShape = function(entity, component) {
     if (component.isAntiAliased) {
       let texture = graphics.generateTexture();
       let sprite = new Sprite(texture);
+      sprite.anchor.x = 0.5;
+      sprite.anchor.y = 0.5;
       this._layers[component.layer].addChild(sprite);
       this._entityGraphics[entity.id].push(sprite);
     } else {

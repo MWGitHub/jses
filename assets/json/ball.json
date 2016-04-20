@@ -8,6 +8,9 @@
         }
       ]
     },
+    "GameObjectComponent": {
+      "isBound": true
+    },
     "RigidBodyComponent": {
       "linearDamping": {
         "x": 0.01,

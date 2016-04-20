@@ -9,7 +9,7 @@ import Input from './src/core/input';
 import GameState from './lib/game-state';
 
 var Game = function () {
-  var width = 1024, height = 576;
+  var width = 768, height = 432;
   var gameElement = document.getElementById('content');
 
   var core = new Core(window);

@@ -6,6 +6,7 @@ import RigidBodyComponent from './rigid-body-component';
 import SpatialComponent from '../spatial-component';
 import World from './world';
 import RigidBody from './rigid-body';
+import Circle from './geometries/circle';
 
 class PhysicsSystem extends System {
   /**
@@ -27,16 +28,19 @@ class PhysicsSystem extends System {
     let bodyComponent = entity[RigidBodyComponent.type];
     if (!bodyComponent) return;
     let rigidBody = new RigidBody({
-      bodyComponent: bodyComponent
+      entity: entity,
+      spatial: entity[SpatialComponent.type],
+      body: bodyComponent
     });
     this._addShape(entity, rigidBody);
     this._entityBodies[entity.id] = this._entityBodies[entity.id] || [];
     this._entityBodies[entity.id].push(rigidBody);
-    this._world.add(bodyComponent);
+    this._world.add(rigidBody);
   }
 
   _addShape(entity, body) {
     let shapesComponent = entity[CollisionShapesComponent.type];
+    // Only support circles for now
     let shapes = shapesComponent.shapes;
     for (let i = 0; i < shapes.length; ++i) {
       let shapeData = shapes[i];
@@ -52,23 +56,23 @@ class PhysicsSystem extends System {
     }
   }
 
+  _remove(entity) {
+    let bodies = this._entityBodies[entity.id];
+    if (!bodies) return;
+
+    for (let i = 0; i < bodies.length; ++i) {
+      this._world.remove(bodies[i]);
+    }
+
+    delete this._entityBodies[entity.id];
+  }
+
   update(dt) {
     let set = this._entitySystem.getEntities(RigidBodyComponent.type);
     set.eachAdded(this._addBody.bind(this));
+    set.eachRemoved(this._remove.bind(this));
 
     this._world.step(dt);
-
-    set.each(entity => {
-      let spatial = entity[SpatialComponent.type];
-      if (!spatial) return;
-      let rigidBody = entity[RigidBodyComponent.type];
-
-      spatial.position.x += rigidBody.linearVelocity.x * dt / 1000;
-      spatial.position.y += rigidBody.linearVelocity.y * dt / 1000;
-
-      rigidBody.linearVelocity.x *= 1 - rigidBody.linearDamping.x;
-      rigidBody.linearVelocity.y *= 1 - rigidBody.linearDamping.y;
-    });
   }
 }
 
