@@ -2,7 +2,7 @@
 
 JSES is a framework for creating interactive applications. It uses a composition based architecture with entities, components, and systems to handle logic. The framework comes with optional systems that can be used, the main ones being a rendering system and a physics system.
 
-Check out some examples at [www.mwguy.com/jses](http://www.mwguy.com/jses)
+Check out some examples at [www.mwguy.com/jses](https://www.mwguy.com/jses)
 
 ###Balls Example:
 
