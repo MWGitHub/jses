@@ -44,6 +44,8 @@ class CollisionResolver {
 
     impulse = normal.multiply(impulse);
 
+    // debugger;
+
     body2.body.linearVelocity.x += impulse.x;
     body2.body.linearVelocity.y += impulse.y;
     body1.body.linearVelocity.x -= impulse.x;

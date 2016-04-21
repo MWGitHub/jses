@@ -4,13 +4,9 @@ JSES is a framework for creating interactive applications. It uses a composition
 
 Check out some examples at [mwgithub.github.io/jses](https://mwgithub.github.io/jses)
 
-###Welcome View:
+###Balls Example:
 
-![welcome]
-
-###Example View:
-
-![example]
+![balls]
 
 ###Technical Details:
 * JSES uses a composition based architecture by having entities be pure data objects living in an entity system. An entity system is the hub for retrieving entities by sets. The sets are then iterated through by systems, which operate on each individual entity within the set. Having an entity as pure data allows them to be constructed with JSON, allowing behaviors to be changed without having to write code. The loader to construct the entities can be seen below.
@@ -121,5 +117,4 @@ update(dt) {
 * [ ] Support polygon collisions
 * [ ] Add broad phase collision detection
 
-[welcome]: ./docs/images/welcome.png
-[example]: ./docs/images/example.png
+[balls]: ./docs/images/balls-demo.png

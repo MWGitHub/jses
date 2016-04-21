@@ -31185,7 +31185,7 @@ var Game =
 	
 	var _physicsSystem2 = _interopRequireDefault(_physicsSystem);
 	
-	var _gameObjectSystem = __webpack_require__(164);
+	var _gameObjectSystem = __webpack_require__(169);
 	
 	var _gameObjectSystem2 = _interopRequireDefault(_gameObjectSystem);
 	
@@ -31201,7 +31201,7 @@ var Game =
 	
 	var _controlComponent2 = _interopRequireDefault(_controlComponent);
 	
-	var _gameObjectComponent = __webpack_require__(165);
+	var _gameObjectComponent = __webpack_require__(170);
 	
 	var _gameObjectComponent2 = _interopRequireDefault(_gameObjectComponent);
 	
@@ -31213,11 +31213,11 @@ var Game =
 	
 	var _collisionShapesComponent2 = _interopRequireDefault(_collisionShapesComponent);
 	
-	var _objectCreator = __webpack_require__(166);
+	var _objectCreator = __webpack_require__(171);
 	
 	var _objectCreator2 = _interopRequireDefault(_objectCreator);
 	
-	var _ball = __webpack_require__(167);
+	var _ball = __webpack_require__(172);
 	
 	var _ball2 = _interopRequireDefault(_ball);
 	
@@ -32752,11 +32752,11 @@ var Game =
 	
 	var _world2 = _interopRequireDefault(_world);
 	
-	var _rigidBody = __webpack_require__(163);
+	var _rigidBody = __webpack_require__(166);
 	
 	var _rigidBody2 = _interopRequireDefault(_rigidBody);
 	
-	var _circle = __webpack_require__(171);
+	var _circle = __webpack_require__(167);
 	
 	var _circle2 = _interopRequireDefault(_circle);
 	
@@ -33017,11 +33017,11 @@ var Game =
 	
 	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 	
-	var _collisionDetector = __webpack_require__(168);
+	var _collisionDetector = __webpack_require__(163);
 	
 	var _collisionDetector2 = _interopRequireDefault(_collisionDetector);
 	
-	var _collisionResolver = __webpack_require__(170);
+	var _collisionResolver = __webpack_require__(165);
 	
 	var _collisionResolver2 = _interopRequireDefault(_collisionResolver);
 	
@@ -33030,7 +33030,9 @@ var Game =
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 	
 	var World = function () {
-	  function World(options) {
+	  function World() {
+	    var options = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
+	
 	    _classCallCheck(this, World);
 	
 	    /**
@@ -33041,6 +33043,8 @@ var Game =
 	
 	    this._collisionDetector = new _collisionDetector2.default();
 	    this._collisionResolver = new _collisionResolver2.default();
+	
+	    this._steps = options.steps || 1;
 	  }
 	
 	  /**
@@ -33067,20 +33071,22 @@ var Game =
 	  }, {
 	    key: 'step',
 	    value: function step(dt) {
-	      for (var i = 0; i < this._bodies.length; ++i) {
-	        var body = this._bodies[i];
-	        var rigid = body.body;
-	        var spatial = body.spatial;
+	      for (var step = 0; step < this._steps; ++step) {
+	        for (var i = 0; i < this._bodies.length; ++i) {
+	          var body = this._bodies[i];
+	          var rigid = body.body;
+	          var spatial = body.spatial;
 	
-	        // Update velocity from acceleration
-	        var collisions = this._collisionDetector.checkCollisions(this._bodies);
-	        this._collisionResolver.resolve(collisions);
+	          // Update velocity from acceleration
+	          var collisions = this._collisionDetector.checkCollisions(this._bodies);
+	          this._collisionResolver.resolve(collisions);
 	
-	        spatial.position.x += rigid.linearVelocity.x * dt / 1000;
-	        spatial.position.y += rigid.linearVelocity.y * dt / 1000;
+	          spatial.position.x += rigid.linearVelocity.x * dt / 1000 / this._steps;
+	          spatial.position.y += rigid.linearVelocity.y * dt / 1000 / this._steps;
 	
-	        rigid.linearVelocity.x *= 1 - rigid.linearDamping.x;
-	        rigid.linearVelocity.y *= 1 - rigid.linearDamping.y;
+	          rigid.linearVelocity.x *= 1 - rigid.linearDamping.x;
+	          rigid.linearVelocity.y *= 1 - rigid.linearDamping.y;
+	        }
 	      }
 	    }
 	  }]);
@@ -33092,6 +33098,323 @@ var Game =
 
 /***/ },
 /* 163 */
+/***/ function(module, exports, __webpack_require__) {
+
+	"use strict";
+	
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	
+	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+	
+	var _vector = __webpack_require__(164);
+	
+	var _vector2 = _interopRequireDefault(_vector);
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+	
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+	
+	var CollisionDetector = function () {
+	  function CollisionDetector() {
+	    _classCallCheck(this, CollisionDetector);
+	  }
+	
+	  _createClass(CollisionDetector, [{
+	    key: 'checkCollision',
+	    value: function checkCollision(body1, body2) {
+	      var pos1 = new _vector2.default(body1.spatial.position.x, body1.spatial.position.y);
+	      var pos2 = new _vector2.default(body2.spatial.position.x, body2.spatial.position.y);
+	      var r1 = body1.geometry.radius;
+	      var r2 = body2.geometry.radius;
+	
+	      var vector = new _vector2.default(pos2.x, pos2.y).subtract(pos1);
+	      var overlap = vector.normal() - (r1 + r2);
+	
+	      // Overlap, choose direction
+	      if (vector.equals(_vector.ZeroVector)) {
+	        vector.set(1, 0);
+	      }
+	
+	      var collision = null;
+	      if (overlap <= 0) {
+	        collision = {
+	          body1: body1,
+	          body2: body2,
+	          normalized: vector.normalize().toJSON(),
+	          transit: vector.clone().multiply(-overlap).toJSON(),
+	          position: vector.multiply(-r1).toJSON()
+	        };
+	      }
+	      return collision;
+	    }
+	  }, {
+	    key: 'checkCollisions',
+	    value: function checkCollisions(bodies) {
+	      var hash = {};
+	      var collisions = [];
+	      for (var i = 0; i < bodies.length; ++i) {
+	        var body1 = bodies[i];
+	        for (var j = 0; j < bodies.length; ++j) {
+	          if (i === j) continue;
+	          var body2 = bodies[j];
+	          if (hash[body1.id + '-' + body2.id]) continue;
+	
+	          var result = this.checkCollision(bodies[i], bodies[j]);
+	          hash[body1.id + '-' + body2.id] = true;
+	          hash[body2.id + '-' + body1.id] = true;
+	          if (result) {
+	            collisions.push(result);
+	          }
+	        }
+	      }
+	      return collisions;
+	    }
+	  }]);
+	
+	  return CollisionDetector;
+	}();
+	
+	exports.default = CollisionDetector;
+
+/***/ },
+/* 164 */
+/***/ function(module, exports) {
+
+	"use strict";
+	
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	
+	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+	
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+	
+	var Vector2 = function () {
+	  function Vector2(x, y) {
+	    _classCallCheck(this, Vector2);
+	
+	    this.x = x;
+	    this.y = y;
+	  }
+	
+	  /**
+	   * Set the vector.
+	   * @param {Vector2|number} v the vector to set or the x coordinate.
+	   * @param {number=} y the y coordinate to set.
+	   */
+	
+	
+	  _createClass(Vector2, [{
+	    key: "set",
+	    value: function set(v, y) {
+	      if (v.x || v.y) {
+	        this.x = v.x;
+	        this.y = v.x;
+	      } else {
+	        this.x = v;
+	        this.y = y;
+	      }
+	      return this;
+	    }
+	
+	    /**
+	     * Adds to the vector.
+	     * @param {Vector2|number} v the vector to add or the x coordinate.
+	     * @param {number=} y the y coordinate to add.
+	     */
+	
+	  }, {
+	    key: "add",
+	    value: function add(v, y) {
+	      if (v.x || v.y) {
+	        this.x += v.x;
+	        this.y += v.y;
+	      } else {
+	        this.x += v;
+	        this.y += y;
+	      }
+	      return this;
+	    }
+	
+	    /**
+	     * Subtracts from the vector.
+	     * @param {Vector2|number} v the vector to subtract by or the x coordinate.
+	     * @param {number=} y the y coordinate to subtract by.
+	     */
+	
+	  }, {
+	    key: "subtract",
+	    value: function subtract(v, y) {
+	      if (v.x || v.y) {
+	        this.x -= v.x;
+	        this.y -= v.y;
+	      } else {
+	        this.x -= v;
+	        this.y -= y;
+	      }
+	      return this;
+	    }
+	  }, {
+	    key: "multiply",
+	    value: function multiply(s) {
+	      this.x *= s;
+	      this.y *= s;
+	      return this;
+	    }
+	  }, {
+	    key: "normal",
+	    value: function normal() {
+	      return Math.sqrt(this.x * this.x + this.y * this.y);
+	    }
+	  }, {
+	    key: "normalize",
+	    value: function normalize() {
+	      var normal = this.normal();
+	      if (normal === 0) return this;
+	
+	      this.multiply(1 / normal);
+	      return this;
+	    }
+	  }, {
+	    key: "equals",
+	    value: function equals(v) {
+	      return this.x === v.x && this.y === v.y;
+	    }
+	  }, {
+	    key: "perpendicular",
+	    value: function perpendicular(isCounterClockwise) {
+	      var temp = this.x;
+	      if (isCounterClockwise) {
+	        this.x = this.y;
+	        this.y = -temp;
+	      } else {
+	        this.x = -this.y;
+	        this.y = temp;
+	      }
+	      return this;
+	    }
+	  }, {
+	    key: "dot",
+	    value: function dot(v) {
+	      return this.x * v.x + this.y * v.y;
+	    }
+	  }, {
+	    key: "cross",
+	    value: function cross(v) {
+	      return -this.x * v.y + this.y * v.x;
+	    }
+	  }, {
+	    key: "project",
+	    value: function project(v) {
+	      return this.dot(v) / v.normal();
+	    }
+	  }, {
+	    key: "clone",
+	    value: function clone() {
+	      return new Vector2(this.x, this.y);
+	    }
+	  }, {
+	    key: "toJSON",
+	    value: function toJSON() {
+	      return { x: this.x, y: this.y };
+	    }
+	  }]);
+	
+	  return Vector2;
+	}();
+	
+	var ZeroVector = new Vector2(0, 0);
+	
+	exports.ZeroVector = ZeroVector;
+	exports.default = Vector2;
+
+/***/ },
+/* 165 */
+/***/ function(module, exports, __webpack_require__) {
+
+	"use strict";
+	
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	
+	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+	
+	var _vector = __webpack_require__(164);
+	
+	var _vector2 = _interopRequireDefault(_vector);
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+	
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+	
+	var CollisionResolver = function () {
+	  function CollisionResolver() {
+	    _classCallCheck(this, CollisionResolver);
+	  }
+	
+	  _createClass(CollisionResolver, [{
+	    key: "resolveSingle",
+	    value: function resolveSingle(collision) {
+	      var normal = new _vector2.default(collision.normalized.x, collision.normalized.y);
+	      var collide = new _vector2.default(collision.position.x, collision.position.y);
+	      var transit = new _vector2.default(collision.transit.x, collision.transit.y);
+	
+	      var body1 = collision.body1;
+	      var body2 = collision.body2;
+	      var spatial1 = body1.spatial;
+	      var spatial2 = body2.spatial;
+	      var perpendicular = normal.clone().perpendicular();
+	      var collide1 = collide.clone();
+	      var collide2 = collide.clone().add(spatial1.position.x, spatial1.position.y).subtract(spatial2.position.x, spatial2.position.y);
+	
+	      var velocityTo2 = new _vector2.default(body2.body.linearVelocity.x, body2.body.linearVelocity.y).add(collide2.clone().perpendicular()).subtract(new _vector2.default(body1.body.linearVelocity.x, body1.body.linearVelocity.y)).subtract(collide1.clone().perpendicular());
+	
+	      var project1 = collide1.project(normal);
+	      var perp1 = collide1.project(perpendicular);
+	      var project2 = collide2.project(normal);
+	      var perp2 = collide2.project(perpendicular);
+	      var proj = velocityTo2.project(normal);
+	      var perp = velocityTo2.project(perpendicular);
+	
+	      transit.multiply(0.5);
+	
+	      // Moving away, no change needed
+	      if (proj >= 0) {
+	        return;
+	      }
+	
+	      var impulse = -proj / (1 + perp1 * perp1 + perp2 * perp2);
+	
+	      impulse = normal.multiply(impulse);
+	
+	      // debugger;
+	
+	      body2.body.linearVelocity.x += impulse.x;
+	      body2.body.linearVelocity.y += impulse.y;
+	      body1.body.linearVelocity.x -= impulse.x;
+	      body1.body.linearVelocity.y -= impulse.y;
+	    }
+	  }, {
+	    key: "resolve",
+	    value: function resolve(collisions) {
+	      for (var i = 0; i < collisions.length; ++i) {
+	        var collision = collisions[i];
+	        this.resolveSingle(collision);
+	      }
+	    }
+	  }]);
+	
+	  return CollisionResolver;
+	}();
+	
+	exports.default = CollisionResolver;
+
+/***/ },
+/* 166 */
 /***/ function(module, exports) {
 
 	"use strict";
@@ -33120,7 +33443,64 @@ var Game =
 	exports.default = RigidBody;
 
 /***/ },
-/* 164 */
+/* 167 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	
+	var _geometry = __webpack_require__(168);
+	
+	var _geometry2 = _interopRequireDefault(_geometry);
+	
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+	
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+	
+	function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+	
+	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+	
+	var Circle = function (_Geometry) {
+	  _inherits(Circle, _Geometry);
+	
+	  function Circle(options) {
+	    _classCallCheck(this, Circle);
+	
+	    var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(Circle).call(this, options));
+	
+	    _this.radius = options.radius || 1.0;
+	    return _this;
+	  }
+	
+	  return Circle;
+	}(_geometry2.default);
+	
+	exports.default = Circle;
+
+/***/ },
+/* 168 */
+/***/ function(module, exports) {
+
+	"use strict";
+	
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+	
+	var Geometry = function Geometry() {
+	  _classCallCheck(this, Geometry);
+	};
+	
+	exports.default = Geometry;
+
+/***/ },
+/* 169 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
@@ -33139,7 +33519,7 @@ var Game =
 	
 	var _spatialComponent2 = _interopRequireDefault(_spatialComponent);
 	
-	var _gameObjectComponent = __webpack_require__(165);
+	var _gameObjectComponent = __webpack_require__(170);
 	
 	var _gameObjectComponent2 = _interopRequireDefault(_gameObjectComponent);
 	
@@ -33223,7 +33603,7 @@ var Game =
 	exports.default = GameObjectSystem;
 
 /***/ },
-/* 165 */
+/* 170 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
@@ -33268,7 +33648,7 @@ var Game =
 	exports.default = GameObjectComponent;
 
 /***/ },
-/* 166 */
+/* 171 */
 /***/ function(module, exports) {
 
 	"use strict";
@@ -33430,7 +33810,7 @@ var Game =
 	exports.default = ObjectCreator;
 
 /***/ },
-/* 167 */
+/* 172 */
 /***/ function(module, exports) {
 
 	module.exports = {
@@ -33474,378 +33854,6 @@ var Game =
 			}
 		}
 	};
-
-/***/ },
-/* 168 */
-/***/ function(module, exports, __webpack_require__) {
-
-	"use strict";
-	
-	Object.defineProperty(exports, "__esModule", {
-	  value: true
-	});
-	
-	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-	
-	var _vector = __webpack_require__(169);
-	
-	var _vector2 = _interopRequireDefault(_vector);
-	
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-	
-	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-	
-	var CollisionDetector = function () {
-	  function CollisionDetector() {
-	    _classCallCheck(this, CollisionDetector);
-	  }
-	
-	  _createClass(CollisionDetector, [{
-	    key: 'checkCollision',
-	    value: function checkCollision(body1, body2) {
-	      var pos1 = new _vector2.default(body1.spatial.position.x, body1.spatial.position.y);
-	      var pos2 = new _vector2.default(body2.spatial.position.x, body2.spatial.position.y);
-	      var r1 = body1.geometry.radius;
-	      var r2 = body2.geometry.radius;
-	
-	      var vector = new _vector2.default(pos2.x, pos2.y).subtract(pos1);
-	      var overlap = vector.normal() - (r1 + r2);
-	
-	      // Overlap, choose direction
-	      if (vector.equals(_vector.ZeroVector)) {
-	        vector.set(1, 0);
-	      }
-	
-	      var collision = null;
-	      if (overlap <= 0) {
-	        collision = {
-	          body1: body1,
-	          body2: body2,
-	          normalized: vector.normalize().toJSON(),
-	          transit: vector.clone().multiply(-overlap).toJSON(),
-	          position: vector.multiply(-r1).toJSON()
-	        };
-	      }
-	      return collision;
-	    }
-	  }, {
-	    key: 'checkCollisions',
-	    value: function checkCollisions(bodies) {
-	      var hash = {};
-	      var collisions = [];
-	      for (var i = 0; i < bodies.length; ++i) {
-	        var body1 = bodies[i];
-	        for (var j = 0; j < bodies.length; ++j) {
-	          if (i === j) continue;
-	          var body2 = bodies[j];
-	          if (hash[body1.id + '-' + body2.id]) continue;
-	
-	          var result = this.checkCollision(bodies[i], bodies[j]);
-	          hash[body1.id + '-' + body2.id] = true;
-	          hash[body2.id + '-' + body1.id] = true;
-	          if (result) {
-	            collisions.push(result);
-	          }
-	        }
-	      }
-	      return collisions;
-	    }
-	  }]);
-	
-	  return CollisionDetector;
-	}();
-	
-	exports.default = CollisionDetector;
-
-/***/ },
-/* 169 */
-/***/ function(module, exports) {
-
-	"use strict";
-	
-	Object.defineProperty(exports, "__esModule", {
-	  value: true
-	});
-	
-	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-	
-	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-	
-	var Vector2 = function () {
-	  function Vector2(x, y) {
-	    _classCallCheck(this, Vector2);
-	
-	    this.x = x;
-	    this.y = y;
-	  }
-	
-	  /**
-	   * Set the vector.
-	   * @param {Vector2|number} v the vector to set or the x coordinate.
-	   * @param {number=} y the y coordinate to set.
-	   */
-	
-	
-	  _createClass(Vector2, [{
-	    key: "set",
-	    value: function set(v, y) {
-	      if (v.x || v.y) {
-	        this.x = v.x;
-	        this.y = v.x;
-	      } else {
-	        this.x = v;
-	        this.y = y;
-	      }
-	      return this;
-	    }
-	
-	    /**
-	     * Adds to the vector.
-	     * @param {Vector2|number} v the vector to add or the x coordinate.
-	     * @param {number=} y the y coordinate to add.
-	     */
-	
-	  }, {
-	    key: "add",
-	    value: function add(v, y) {
-	      if (v.x || v.y) {
-	        this.x += v.x;
-	        this.y += v.y;
-	      } else {
-	        this.x += v;
-	        this.y += y;
-	      }
-	      return this;
-	    }
-	
-	    /**
-	     * Subtracts from the vector.
-	     * @param {Vector2|number} v the vector to subtract by or the x coordinate.
-	     * @param {number=} y the y coordinate to subtract by.
-	     */
-	
-	  }, {
-	    key: "subtract",
-	    value: function subtract(v, y) {
-	      if (v.x || v.y) {
-	        this.x -= v.x;
-	        this.y -= v.y;
-	      } else {
-	        this.x -= v;
-	        this.y -= y;
-	      }
-	      return this;
-	    }
-	  }, {
-	    key: "multiply",
-	    value: function multiply(s) {
-	      this.x *= s;
-	      this.y *= s;
-	      return this;
-	    }
-	  }, {
-	    key: "normal",
-	    value: function normal() {
-	      return Math.sqrt(this.x * this.x + this.y * this.y);
-	    }
-	  }, {
-	    key: "normalize",
-	    value: function normalize() {
-	      var normal = this.normal();
-	      if (normal === 0) return this;
-	
-	      this.multiply(1 / normal);
-	      return this;
-	    }
-	  }, {
-	    key: "equals",
-	    value: function equals(v) {
-	      return this.x === v.x && this.y === v.y;
-	    }
-	  }, {
-	    key: "perpendicular",
-	    value: function perpendicular(isCounterClockwise) {
-	      var temp = this.x;
-	      if (isCounterClockwise) {
-	        this.x = this.y;
-	        this.y = -temp;
-	      } else {
-	        this.x = -this.y;
-	        this.y = temp;
-	      }
-	      return this;
-	    }
-	  }, {
-	    key: "dot",
-	    value: function dot(v) {
-	      return this.x * v.x + this.y * v.y;
-	    }
-	  }, {
-	    key: "cross",
-	    value: function cross(v) {
-	      return -this.x * v.y + this.y * v.x;
-	    }
-	  }, {
-	    key: "project",
-	    value: function project(v) {
-	      return this.dot(v) / v.normal();
-	    }
-	  }, {
-	    key: "clone",
-	    value: function clone() {
-	      return new Vector2(this.x, this.y);
-	    }
-	  }, {
-	    key: "toJSON",
-	    value: function toJSON() {
-	      return { x: this.x, y: this.y };
-	    }
-	  }]);
-	
-	  return Vector2;
-	}();
-	
-	var ZeroVector = new Vector2(0, 0);
-	
-	exports.ZeroVector = ZeroVector;
-	exports.default = Vector2;
-
-/***/ },
-/* 170 */
-/***/ function(module, exports, __webpack_require__) {
-
-	"use strict";
-	
-	Object.defineProperty(exports, "__esModule", {
-	  value: true
-	});
-	
-	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-	
-	var _vector = __webpack_require__(169);
-	
-	var _vector2 = _interopRequireDefault(_vector);
-	
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-	
-	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-	
-	var CollisionResolver = function () {
-	  function CollisionResolver() {
-	    _classCallCheck(this, CollisionResolver);
-	  }
-	
-	  _createClass(CollisionResolver, [{
-	    key: "resolveSingle",
-	    value: function resolveSingle(collision) {
-	      var normal = new _vector2.default(collision.normalized.x, collision.normalized.y);
-	      var collide = new _vector2.default(collision.position.x, collision.position.y);
-	      var transit = new _vector2.default(collision.transit.x, collision.transit.y);
-	
-	      var body1 = collision.body1;
-	      var body2 = collision.body2;
-	      var spatial1 = body1.spatial;
-	      var spatial2 = body2.spatial;
-	      var perpendicular = normal.clone().perpendicular();
-	      var collide1 = collide.clone();
-	      var collide2 = collide.clone().add(spatial1.position.x, spatial1.position.y).subtract(spatial2.position.x, spatial2.position.y);
-	
-	      var velocityTo2 = new _vector2.default(body2.body.linearVelocity.x, body2.body.linearVelocity.y).add(collide2.clone().perpendicular()).subtract(new _vector2.default(body1.body.linearVelocity.x, body1.body.linearVelocity.y)).subtract(collide1.clone().perpendicular());
-	
-	      var project1 = collide1.project(normal);
-	      var perp1 = collide1.project(perpendicular);
-	      var project2 = collide2.project(normal);
-	      var perp2 = collide2.project(perpendicular);
-	      var proj = velocityTo2.project(normal);
-	      var perp = velocityTo2.project(perpendicular);
-	
-	      transit.multiply(0.5);
-	
-	      // Moving away, no change needed
-	      if (proj >= 0) {
-	        return;
-	      }
-	
-	      var impulse = -proj / (1 + perp1 * perp1 + perp2 * perp2);
-	
-	      impulse = normal.multiply(impulse);
-	
-	      body2.body.linearVelocity.x += impulse.x;
-	      body2.body.linearVelocity.y += impulse.y;
-	      body1.body.linearVelocity.x -= impulse.x;
-	      body1.body.linearVelocity.y -= impulse.y;
-	    }
-	  }, {
-	    key: "resolve",
-	    value: function resolve(collisions) {
-	      for (var i = 0; i < collisions.length; ++i) {
-	        var collision = collisions[i];
-	        this.resolveSingle(collision);
-	      }
-	    }
-	  }]);
-	
-	  return CollisionResolver;
-	}();
-	
-	exports.default = CollisionResolver;
-
-/***/ },
-/* 171 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-	
-	Object.defineProperty(exports, "__esModule", {
-	  value: true
-	});
-	
-	var _geometry = __webpack_require__(172);
-	
-	var _geometry2 = _interopRequireDefault(_geometry);
-	
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-	
-	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-	
-	function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
-	
-	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
-	
-	var Circle = function (_Geometry) {
-	  _inherits(Circle, _Geometry);
-	
-	  function Circle(options) {
-	    _classCallCheck(this, Circle);
-	
-	    var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(Circle).call(this, options));
-	
-	    _this.radius = options.radius || 1.0;
-	    return _this;
-	  }
-	
-	  return Circle;
-	}(_geometry2.default);
-	
-	exports.default = Circle;
-
-/***/ },
-/* 172 */
-/***/ function(module, exports) {
-
-	"use strict";
-	
-	Object.defineProperty(exports, "__esModule", {
-	  value: true
-	});
-	
-	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-	
-	var Geometry = function Geometry() {
-	  _classCallCheck(this, Geometry);
-	};
-	
-	exports.default = Geometry;
 
 /***/ }
 /******/ ]);
