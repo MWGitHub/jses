@@ -33828,8 +33828,8 @@ var Game =
 			},
 			"RigidBodyComponent": {
 				"linearDamping": {
-					"x": 0.01,
-					"y": 0.01
+					"x": 0,
+					"y": 0
 				}
 			},
 			"SpatialComponent": {},

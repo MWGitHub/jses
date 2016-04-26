@@ -13,8 +13,8 @@
     },
     "RigidBodyComponent": {
       "linearDamping": {
-        "x": 0.01,
-        "y": 0.01
+        "x": 0.00,
+        "y": 0.00
       }
     },
     "SpatialComponent": {},
