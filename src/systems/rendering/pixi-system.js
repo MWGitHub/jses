@@ -39,17 +39,22 @@ function convertArguments(args) {
 PIXISystem.prototype._createShape = function(entity, component) {
   // Create shape if provided
   let shapes = component.shapes;
+
   if (shapes.length > 0) {
     let graphics = new Graphics();
+
     for (let i = 0; i < shapes.length; i++) {
       let command = shapes[i][0];
       let args = convertArguments(shapes[i].slice(1));
       Object.getPrototypeOf(graphics)[command].apply(graphics, args);
     }
+
     this._entityGraphics[entity.id] = this._entityGraphics[entity.id] || [];
+
     if (component.isAntiAliased) {
       let texture = graphics.generateTexture();
       let sprite = new Sprite(texture);
+
       sprite.anchor.x = 0.5;
       sprite.anchor.y = 0.5;
       this._layers[component.layer].addChild(sprite);
@@ -80,9 +85,11 @@ PIXISystem.prototype.update = function (dt) {
 		let spatial = this._entitySystem.getComponent(entity,
       SpatialComponent.type);
 		let graphicsArray = this._entityGraphics[entity.id];
+
 		if (spatial) {
 			for (let i = 0; i < graphicsArray.length; i++) {
 				let graphics = graphicsArray[i];
+
 				graphics.x = spatial.position.x;
 				graphics.y = spatial.position.y;
 				graphics.scale.x = spatial.scale.x;

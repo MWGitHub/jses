@@ -1,10 +1,7 @@
-"use strict";
-
-var path = require('path');
-var webpack = require('webpack');
+const path = require('path');
 
 module.exports = {
-  entry: './main.js',
+  entry: ['babel-polyfill', './main.js'],
   output: {
     path: __dirname,
     filename: './assets/js/bundle.js',
@@ -19,11 +16,8 @@ module.exports = {
       },
       {
         test: /.js$/,
-        loader: 'babel-loader',
-        exclude: /node_modules/,
-        query: {
-          presets: ['es2015']
-        }
+        loader: 'babel',
+        exclude: /(node_modules)/
       }
     ],
     postLoaders: [
@@ -33,5 +27,5 @@ module.exports = {
       }
     ]
   },
-  devtool: '#source-map'
+  devtool: 'inline-source-map'
 };
