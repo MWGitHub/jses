@@ -1,14 +1,14 @@
-#JSES
+# JSES
 
 JSES is a framework for creating interactive applications. It uses a composition based architecture with entities, components, and systems to handle logic. The framework comes with optional systems that can be used, the main ones being a rendering system and a physics system.
 
 Check out some examples at [mwgithub.github.io/jses](https://mwgithub.github.io/jses)
 
-###Balls Example:
+### Balls Example:
 
 ![balls]
 
-###Technical Details:
+### Technical Details:
 * JSES uses a composition based architecture by having entities be pure data objects living in an entity system. An entity system is the hub for retrieving entities by sets. The sets are then iterated through by systems, which operate on each individual entity within the set. Having an entity as pure data allows them to be constructed with JSON, allowing behaviors to be changed without having to write code. The loader to construct the entities can be seen below.
 
 ```
@@ -101,7 +101,7 @@ update(dt) {
 }
 ```
 
-###Features
+### Features
 * Compositional architecture, reducing coupling and encouraging reusability
 * State machine to switch between groups of logic
 * Input with mouse, keyboard, hotkeys, and gamepad support
@@ -110,7 +110,7 @@ update(dt) {
 * Object creator that reads JSON and composes an entity for rapid prototyping
 * Camera with rotation, scaling, and movement
 
-###To-Do:
+### To-Do:
 * [ ] Add more examples
 * [ ] Support sprites
 * [ ] Show debug shapes
