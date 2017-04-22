@@ -1,12 +1,12 @@
 const path = require('path');
 
 module.exports = {
-  entry: ['babel-polyfill', './src/index.js'],
+  entry: ['babel-polyfill', './main.js'],
   output: {
     path: __dirname,
-    filename: './dist/jses.bundle.js',
+    filename: './assets/js/bundle.js',
     libraryTarget: 'var',
-    library: 'JSES'
+    library: 'Game'
   },
   module: {
     loaders: [
@@ -21,5 +21,5 @@ module.exports = {
       }
     ]
   },
-  devtool: 'source-map'
+  devtool: 'inline-eval-source-map'
 };
