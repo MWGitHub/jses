@@ -3,3 +3,4 @@ coverage/
 .DS_Store
 assets/js/bundle.js
 assets/js/bundle.js.map
+dist

@@ -1,8 +1,8 @@
 {
   "name": "jses",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "description": "",
-  "main": "./jses.bundle.js",
+  "main": "./dist/jses.bundle.js",
   "scripts": {
     "test": "babel-node node_modules/.bin/isparta cover --report text --report html node_modules/.bin/_mocha -- --reporter dot",
     "server": "http-server -p 3001 -c-1",
